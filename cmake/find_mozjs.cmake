@@ -1,0 +1,35 @@
+# - Find mozjs-38
+# Find the SpiderMonkey 38 library
+#
+# This module defines
+# MOZJS_LIBRARY
+# MOZJS_FOUND, if false, do not try to link to SpiderMonkey
+# MOZJS_INCLUDE_DIR, where to find the headers
+#
+
+SET(MOZJS_VERSION 38)
+
+FIND_PATH(MOZJS_INCLUDE_DIR
+  NAMES mozjs-${MOZJS_VERSION}/jsapi.h
+  PATHS /usr/local /usr
+  ENV MOZJS_DIR
+  PATH_SUFFIXES include include-unix
+)
+
+FIND_LIBRARY(MOZJS_LIBRARY
+  NAMES mozjs-${MOZJS_VERSION}
+  PATHS
+  /usr/local
+  /usr
+  ENV MOZJS_LIB
+  PATH_SUFFIXES lib64 lib lib64/shared lib/shared lib64/static lib/static
+)
+
+SET(MOZJS_FOUND "NO")
+IF(MOZJS_LIBRARY AND MOZJS_INCLUDE_DIR)
+  SET(MOZJS_INCLUDE_DIR ${MOZJS_INCLUDE_DIR}/mozjs-${MOZJS_VERSION})
+  MESSAGE(STATUS "MOZJS-${MOZJS_VERSION} found: " ${MOZJS_LIBRARY} " " ${MOZJS_INCLUDE_DIR})
+  SET(MOZJS_FOUND "YES")
+ELSE(MOZJS_LIBRARY AND MOZJS_INCLUDE_DIR)
+  MESSAGE(STATUS "MOZJS-${MOZJS_VERSION} not found")
+ENDIF(MOZJS_LIBRARY AND MOZJS_INCLUDE_DIR)
