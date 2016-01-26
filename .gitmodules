@@ -1,0 +1,6 @@
+[submodule "reflective/tools"]
+	path = reflective/tools
+	url = https://github.com/tim42/tools
+[submodule "reflective/persistence"]
+	path = reflective/persistence
+	url = https://github.com/tim42/persistence
