@@ -26,9 +26,13 @@
 #ifndef __N_4168771271111388602_1810926811__REFLECTIVE_HPP__
 # define __N_4168771271111388602_1810926811__REFLECTIVE_HPP__
 
+#include "function_call.hpp"
+
 namespace neam
 {
-  
+  namespace r
+  {
+  } // namespace r
 } // namespace neam
 
 #endif /*__N_4168771271111388602_1810926811__REFLECTIVE_HPP__*/

@@ -1,6 +1,10 @@
 
 
-file(GLOB PROJ_SOURCES *.cpp)
+set(PROJ_SOURCES
+  ./storage.cpp
+  ./stack_entry.cpp
+  ./function_call.cpp
+)
 
 add_definitions(${PROJ_FLAGS} "-fno-whole-program")
 
