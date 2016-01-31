@@ -6,7 +6,7 @@
 // date: 30/01/2016 15:18:59
 //
 //
-// Copyright (C) 2014 Timothée Feuillet
+// Copyright (C) 2016 Timothée Feuillet
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@
 # define __N_12525294001703727933_157237601__IF_WONT_FAILL_HPP__
 
 #include <memory>
+#include "reason.hpp"
 
 namespace neam
 {
@@ -40,6 +41,9 @@ namespace neam
         template<typename... Args>
          auto _call(Args... args) { return Func(std::forward<Args>(args)...); }
       };
+
+      void report_exception(std::exception &e);
+      void report_unknown_exception();
 
       /// \brief A nice class to condionally call function based on the failure rate
       template<typename FuncType, FuncType Func>
@@ -59,7 +63,7 @@ namespace neam
           template<typename Ret, typename... Args>
           auto call_with_ret(Ret default_ret, Args... args)
           {
-            if (*this)
+            if (is_ok())
               return _call(std::forward<Args>(args)...);
             return std::forward<Ret>(default_ret);
           }
@@ -68,14 +72,74 @@ namespace neam
           /// \note The return value is discarded.
           /// \see call_with_ret()
           template<typename... Args>
-          void call(Args... args)
+          if_wont_fail &call(Args... args)
           {
-            if (*this)
+            if (is_ok())
               this->_call(std::forward<Args>(args)...);
+            return *this;
+          }
+
+          /// \brief Chain an action to be done if the thing will NOT fail
+          /// \param fnc A function (that returns nothing and takes nothing) that will be called, or not
+          /// \see otherwise
+          template<typename F>
+          if_wont_fail &then(F fnc)
+          {
+            if (is_ok())
+            {
+              try
+              {
+                fnc();
+              }
+              catch (std::exception &e)
+              {
+                report_exception(e);
+                throw;
+              }
+              catch (...)
+              {
+                report_unknown_exception();
+                throw;
+              }
+            }
+            return *this;
+          }
+
+          /// \brief Chain an action to be done if the thing WILL fail
+          /// \param fnc A function (that returns nothing and takes nothing) that will be called, or not
+          /// \see then
+          template<typename F>
+          if_wont_fail &otherwise(F fnc)
+          {
+            if (!is_ok())
+            {
+              try
+              {
+                fnc();
+              }
+              catch (std::exception &e)
+              {
+                report_exception(e);
+                throw;
+              }
+              catch (...)
+              {
+                report_unknown_exception();
+                throw;
+              }
+            }
+            return *this;
           }
 
           /// \brief Used to have boolean values
+          /// \see is_ok()
           operator bool() const
+          {
+            return is_ok();
+          }
+
+          /// \brief true if the thing won't fail, false if it will
+          inline bool is_ok() const
           {
             return count < min_count || ratio <= max_ratio;
           }

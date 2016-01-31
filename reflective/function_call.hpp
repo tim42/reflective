@@ -6,7 +6,7 @@
 // date: 26/01/2016 18:15:46
 //
 //
-// Copyright (C) 2014 Timothée Feuillet
+// Copyright (C) 2016 Timothée Feuillet
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -36,18 +36,43 @@
 #include "call_info_struct.hpp"
 #include "storage.hpp"
 #include "if_wont_fail.hpp"
+#include "type.hpp"
+#include "config.hpp"
 
 namespace neam
 {
   namespace r
   {
-    namespace internal
-    {
-      /// \brief only present for type deduction
-      template<typename T> struct type { using t = T; };
-    } // namespace internal
+    class introspect;
 
-    /// \brief The public interface of function call
+    /// \brief The public interface for monitoring function call
+    /// This class allow to monitor functions.
+    /// \code
+    /// void my_other_function(int i);
+    ///
+    /// void my_function(int i, double d, void **p)
+    /// {
+    ///   neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(my_function)); // this is the only mandatory line in functions you want to monitor
+    ///
+    ///   // ...
+    ///
+    ///   *p = operator new((125 + i) * 1024  1024, std::nothrow);
+    ///   if (!*p)
+    ///     self_call.fail(neam::r::bad_allocation_reason(N_REASON_INFO, "can't allocate enough memory for p")); // report an error / a small problem
+    ///
+    ///   // ...
+    ///
+    ///   self_call.if_wont_fail(N_FUNCTION_INFO(my_other_function)) // conditional execution
+    ///         .call(i * d)
+    ///         .otherwise([&]()
+    ///         {
+    ///           my_heavy_function_that sanitize_things();
+    ///           my_other_function(i * d);
+    ///         });
+    ///
+    ///   // ...
+    /// }
+    /// \endcode
     class function_call
     {
       private:
@@ -68,7 +93,7 @@ namespace neam
         /// \brief Construct a function call object for a lambda
         /// \note lambda are slower than normal functions 'cause the hash is computed at runtime and this needs RTTI (but it have a cache for call_info_index results)
         /// \see N_PRETTY_LAMBDA_INFO
-        /// \code auto self_call = function_call(N_PRETTY_LAMBDA_INFO(my_lbd_variable)); \endcode
+        /// \code neam::r::function_call self_call(N_PRETTY_LAMBDA_INFO(my_lbd_variable)); \endcode
         template<typename FuncType>
         function_call(const char *pretty_function, const char *const name, uint32_t hash, internal::type<FuncType>)
           : call_info_index(0), call_info(internal::get_call_info_struct<FuncType>(hash, name, pretty_function, &call_info_index)),
@@ -79,21 +104,25 @@ namespace neam
 
         /// \brief Construct a function call object, without the pretty function thing
         /// \see N_FUNCTION_INFO
-        /// \code auto self_call = function_call(N_FUNCTION_INFO(my_class::my_function)); \endcode
+        /// \code neam::r::function_call self_call(N_FUNCTION_INFO(my_class::my_function)); \endcode
         template<typename FuncType, FuncType Func>
         function_call(const char *const name, uint32_t hash, neam::embed::embed<FuncType, Func>, FuncType &f) : function_call(nullptr, name, hash, neam::embed::embed<FuncType, Func>(), f) {}
 
         /// \brief Construct a function call object for a lambda, without the pretty function thing
         /// \see N_LAMBDA_INFO
-        /// \code auto self_call = function_call(N_LAMBDA_INFO(my_lbd_variable)); \endcode
+        /// \code neam::r::function_call self_call(N_LAMBDA_INFO(my_lbd_variable)); \endcode
         template<typename FuncType>
-        function_call(const char *const name, uint32_t hash, internal::type<FuncType>) : function_call(nullptr, name, hash, internal::type<FuncType>()) {}
-        function_call(const char *const name, uint32_t hash) : function_call(nullptr, name, hash, internal::type<void>()) {}
-        function_call(const char *pretty_function, const char *const name, uint32_t hash) : function_call(pretty_function, name, hash, internal::type<void>()) {}
+        function_call(const char *const name, uint32_t hash, internal::type<FuncType>) : function_call(nullptr, name, hash ? hash : internal::hash_from_str(name), internal::type<FuncType>()) {}
+
+        /// \brief If you use this, you have to really know what you're doing...
+        function_call(const char *const name, uint32_t hash = 0) : function_call(nullptr, name, hash, internal::type<void>()) {}
+        /// \brief If you use this, you have to really know what you're doing...
+        function_call(const char *pretty_function, const char *const name, uint32_t hash = 0) : function_call(pretty_function, name, hash ? hash : internal::hash_from_str(name), internal::type<void>()) {}
 
         /// \brief Get the current/active function call
+        /// \warning The returned pointer is ONLY valid in the current scope and should never be stored
         /// \note Could return nullptr if no function_call is active on the current thread
-        static inline function_call *get_top_level_function_call()
+        static inline function_call *get_active_function_call()
         {
           return internal::get_thread_data()->top;
         }
@@ -118,25 +147,11 @@ namespace neam
           return std::forward<Ret>(r);
         }
 
-        // // statistic / reports // //
+        /// \brief Return a contextualized introspect object
+        /// If you want stats, its this way
+        introspect get_introspect() const;
 
-        /// \brief Return the probability of a incoming failure
-        /// \note This call is contextualized, meaning that it only account fails in the current stack
-        /// \note This call only handle the current function, not any of its possible calls
-        /// \see get_global_failure_rate()
-        float get_failure_ratio() const
-        {
-          if (!se) return get_global_failure_ratio();
-          return float(se->fail_count) / float(se->hit_count);
-        }
-
-        /// \brief Return the probability of a incoming failure
-        /// \note Unlike get_failure_rate(), it will account all calls of the current function (not only in the current stack)
-        /// \note This call only handle the current function, not any of its possible calls
-        float get_global_failure_ratio() const
-        {
-          return float(call_info.fail_count) / float(call_info.call_count);
-        }
+        // // conditional // //
 
         /// \brief This function tests if the given function will be likely to fail (fail ratio > 0.5 by default) and returns an object with some properties
         /// to do some kind of conditional execution based on fails
@@ -199,8 +214,8 @@ namespace neam
         cr::chrono self_chrono;
         cr::chrono global_chrono;
         internal::stack_entry *se = nullptr;
-        bool self_time_monitoring = false;
-        bool global_time_monitoring = false;
+        bool self_time_monitoring = conf::monitor_self_time;
+        bool global_time_monitoring = conf::monitor_global_time;
     };
 
 

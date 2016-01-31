@@ -1,9 +1,9 @@
 //
-// file : ct_info.hpp
-// in : file:///home/tim/projects/reflective/reflective/ct_info.hpp
+// file : type.hpp
+// in : file:///home/tim/projects/reflective/reflective/type.hpp
 //
-// created by : Timothée Feuillet on linux.site
-// date: 20/01/2016 18:24:55
+// created by : Timothée Feuillet on linux-vnd3.site
+// date: 31/01/2016 15:08:13
 //
 //
 // Copyright (C) 2016 Timothée Feuillet
@@ -23,26 +23,22 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 
-#ifndef __N_5941161391869237784_784459826__CT_INFO_HPP__
-# define __N_5941161391869237784_784459826__CT_INFO_HPP__
-
-#include <reflective/tools/ct_string.hpp>
+#ifndef __N_865426894276070490_1131732371__TYPE_HPP__
+# define __N_865426894276070490_1131732371__TYPE_HPP__
 
 namespace neam
 {
   namespace r
   {
-    /// \brief some informations about the compilation (yes, some really basic ones)
-    namespace ct
+    namespace internal
     {
-      constexpr neam::string_t build_date = __DATE__ " " __TIME__;
-      constexpr neam::string_t build_file = __BASE_FILE__;
-    } // namespace ct
+      /// \brief only present for type deduction
+      template<typename T> struct type { using t = T; };
+    } // namespace internal
   } // namespace r
 } // namespace neam
 
-#endif /*__N_5941161391869237784_784459826__CT_INFO_HPP__*/
+#endif /*__N_865426894276070490_1131732371__TYPE_HPP__*/
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; 
-
 

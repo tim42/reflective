@@ -32,7 +32,7 @@ neam::r::internal::stack_entry &neam::r::internal::stack_entry::push_children_ca
   {
     index = global->callgraph[thread_index].size();
 
-    global->callgraph[thread_index].emplace_back(stack_entry{(size_t)index, call_info_struct_index, self_index});
+    global->callgraph[thread_index].emplace_back(stack_entry{(size_t)index, thread_index, call_info_struct_index, self_index});
     children.push_back(index);
     return global->callgraph[thread_index].back();
   }
@@ -81,7 +81,7 @@ neam::r::internal::stack_entry &neam::r::internal::stack_entry::initial_get_stac
   global->callgraph.emplace_back(); // call the default constructor
 
   // create the root element
-  global->callgraph.back().emplace_back(stack_entry{0, call_info_struct_index, 0});
+  global->callgraph.back().emplace_back(stack_entry{0, thread_index, call_info_struct_index, 0});
 
   return global->callgraph.back().back();
 }

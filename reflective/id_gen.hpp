@@ -6,7 +6,7 @@
 // date: 30/01/2016 21:33:23
 //
 //
-// Copyright (C) 2014 Timothée Feuillet
+// Copyright (C) 2016 Timothée Feuillet
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by

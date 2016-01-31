@@ -6,7 +6,7 @@
 // date: 29/01/2016 16:26:38
 //
 //
-// Copyright (C) 2014 Timothée Feuillet
+// Copyright (C) 2016 Timothée Feuillet
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,6 +47,8 @@ namespace neam
     NCRP_DECLARE_NAME(r__reason, file);
     NCRP_DECLARE_NAME(r__reason, line);
     NCRP_DECLARE_NAME(r__reason, hit);
+    NCRP_DECLARE_NAME(r__reason, initial_timestamp);
+    NCRP_DECLARE_NAME(r__reason, last_timestamp);
     template<typename Backend> class persistence::serializable<Backend, r::reason> : public persistence::serializable_object
     <
       Backend, // < the backend (here: all backends)
@@ -58,7 +60,9 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::reason, message, names::r__reason::message),
       NCRP_NAMED_TYPED_OFFSET(r::reason, file, names::r__reason::file),
       NCRP_NAMED_TYPED_OFFSET(r::reason, line, names::r__reason::line),
-      NCRP_NAMED_TYPED_OFFSET(r::reason, hit, names::r__reason::hit)
+      NCRP_NAMED_TYPED_OFFSET(r::reason, hit, names::r__reason::hit),
+      NCRP_NAMED_TYPED_OFFSET(r::reason, initial_timestamp, names::r__reason::initial_timestamp),
+      NCRP_NAMED_TYPED_OFFSET(r::reason, last_timestamp, names::r__reason::last_timestamp)
     > {};
 
     // // data // //
@@ -112,10 +116,15 @@ namespace neam
     > {};
 
     // // stack_entry // //
-    NCRP_DECLARE_NAME(r__stack_entry, call_structure_index);
     NCRP_DECLARE_NAME(r__stack_entry, self_index);
+    NCRP_DECLARE_NAME(r__stack_entry, stack_index);
+    NCRP_DECLARE_NAME(r__stack_entry, call_structure_index);
     NCRP_DECLARE_NAME(r__stack_entry, hit_count);
     NCRP_DECLARE_NAME(r__stack_entry, fail_count);
+    NCRP_DECLARE_NAME(r__stack_entry, average_self_time);
+    NCRP_DECLARE_NAME(r__stack_entry, average_self_time_count);
+    NCRP_DECLARE_NAME(r__stack_entry, average_global_time);
+    NCRP_DECLARE_NAME(r__stack_entry, average_global_time_count);
     NCRP_DECLARE_NAME(r__stack_entry, parent);
     NCRP_DECLARE_NAME(r__stack_entry, children);
     template<typename Backend> class persistence::serializable<Backend, r::internal::stack_entry> : public persistence::serializable_object
@@ -125,10 +134,15 @@ namespace neam
       r::internal::stack_entry, // < the class type to handle
 
       // simply list here the members you want to serialize / deserialize
-      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, self_index, names::r__stack_entry::self_index),
+//       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, self_index, names::r__stack_entry::self_index),
+//       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, stack_index, names::r__stack_entry::stack_index),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, call_structure_index, names::r__stack_entry::call_structure_index),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, hit_count, names::r__stack_entry::hit_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, fail_count, names::r__stack_entry::fail_count),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_self_time, names::r__stack_entry::average_self_time),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_self_time_count, names::r__stack_entry::average_self_time_count),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_global_time, names::r__stack_entry::average_global_time),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_global_time_count, names::r__stack_entry::average_global_time_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, parent, names::r__stack_entry::parent),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, children, names::r__stack_entry::children)
     > {};

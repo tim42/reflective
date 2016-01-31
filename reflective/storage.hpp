@@ -6,7 +6,7 @@
 // date: 26/01/2016 18:16:09
 //
 //
-// Copyright (C) 2014 Timothée Feuillet
+// Copyright (C) 2016 Timothée Feuillet
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -86,21 +86,32 @@ namespace neam
       /// \see get_call_info_struct
       call_info_struct &get_call_info_struct_at_index(long index);
 
+      /// \brief This function will not create the structure if nothing is found
+      call_info_struct *_get_call_info_struct_search_only(uint32_t hash, const char *const name, const char *const pretty_name, long &index);
+
       /// \brief Get (or create) the call_info_struct for a given hash/name + possibly set the pretty_name attribute
       /// \note we use some cache here, but it will work most probably work on a per-translation unit basis (except, probably, with some compiler flags to merge globals/statics)
       /// Nevertheless this will increase the speed a little, but will also increase the final executable size (of at least 8bit per monitored function)
       template<typename FuncType, FuncType Func>
-      call_info_struct &get_call_info_struct(uint32_t hash, const char *const name, const char *const pretty_name = nullptr, size_t *_index = nullptr)
+      call_info_struct &get_call_info_struct(uint32_t hash, const char *const name, const char *const pretty_name = nullptr, size_t *_index = nullptr, bool search_only = false)
       {
         static long index = -1; // This is an invalid index
 
         // Both perform the search-or-create and setup the index
         if (index == -1)
         {
-          call_info_struct &ret = _get_call_info_struct(hash, name, pretty_name, index);
+          call_info_struct *ret;
+          if (!search_only)
+            ret = &_get_call_info_struct(hash, name, pretty_name, index);
+          else
+          {
+            ret = _get_call_info_struct_search_only(hash, name, pretty_name, index);
+            if (!ret)
+              throw std::runtime_error("reflective: could not found the requested call_info_struct");
+          }
           if (_index)
             *_index = index;
-          return ret;
+          return *ret;
         }
         if (_index)
           *_index = index;
@@ -111,17 +122,25 @@ namespace neam
       /// \note we use some cache here, but it will work most probably work on a per-translation unit basis (except, probably, with some compiler flags to merge globals/statics)
       /// Nevertheless this will increase the speed a little, but will also increase the final executable size (of at least 8bit per monitored function)
       template<typename FuncType>
-      call_info_struct &get_call_info_struct(uint32_t hash, const char *const name, const char *const pretty_name = nullptr, size_t *_index = nullptr)
+      call_info_struct &get_call_info_struct(uint32_t hash, const char *const name, const char *const pretty_name = nullptr, size_t *_index = nullptr, bool search_only = false)
       {
         static long index = -1; // This is an invalid index
 
         // Both perform the search-or-create and setup the index
-        if (index == -1)
+        if (index == -1 || std::is_same<FuncType, void>::value)
         {
-          call_info_struct &ret = _get_call_info_struct(hash, name, pretty_name, index);
+          call_info_struct *ret;
+          if (!search_only)
+            ret = &_get_call_info_struct(hash, name, pretty_name, index);
+          else
+          {
+            ret = _get_call_info_struct_search_only(hash, name, pretty_name, index);
+            if (!ret)
+              throw std::runtime_error("reflective: could not found the requested call_info_struct");
+          }
           if (_index)
             *_index = index;
-          return ret;
+          return *ret;
         }
         if (_index)
           *_index = index;

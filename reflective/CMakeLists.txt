@@ -1,9 +1,13 @@
 
 
 set(PROJ_SOURCES
+  ./config.cpp
   ./storage.cpp
   ./stack_entry.cpp
   ./function_call.cpp
+  ./introspect.cpp
+  ./if_wont_fail.cpp
+  ./signal.cpp
 )
 
 add_definitions(${PROJ_FLAGS} "-fno-whole-program")

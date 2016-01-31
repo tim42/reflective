@@ -1,5 +1,7 @@
 
+#include <ctime>
 #include "function_call.hpp"
+#include "introspect.hpp"
 
 void neam::r::function_call::common_init()
 {
@@ -24,15 +26,26 @@ void neam::r::function_call::common_init()
 neam::r::function_call::~function_call()
 {
   // Save the time monitoring (global & self)
+  // TODO: thread safety
   if (self_time_monitoring)
   {
     call_info.average_self_time = (call_info.average_self_time * call_info.average_self_time_count + self_chrono.delta()) / (call_info.average_self_time_count + 1.);
     ++call_info.average_self_time_count;
+    if (se)
+    {
+      se->average_self_time = (se->average_self_time * se->average_self_time_count + self_chrono.delta()) / (se->average_self_time_count + 1.);
+      ++se->average_self_time_count;
+    }
   }
   if (global_time_monitoring)
   {
     call_info.average_global_time = (call_info.average_global_time * call_info.average_global_time_count + global_chrono.delta()) / (call_info.average_global_time_count + 1.);
     ++call_info.average_global_time_count;
+    if (se)
+    {
+      se->average_global_time = (se->average_global_time * se->average_global_time_count + global_chrono.delta()) / (se->average_global_time_count + 1.);
+      ++se->average_global_time_count;
+    }
   }
 
   // restore the previous context
@@ -45,7 +58,7 @@ neam::r::function_call::~function_call()
 
 
   if (!prev) // TODO: conf for a real name
-    neam::r::sync_data_to_disk("file.xr"); // there's nothing after us, sync data to a file
+    neam::r::sync_data_to_disk(conf::out_file); // there's nothing after us, sync data to a file
 }
 
 void neam::r::function_call::fail(const neam::r::reason &rsn)
@@ -57,11 +70,19 @@ void neam::r::function_call::fail(const neam::r::reason &rsn)
 
   // Avoid huge reports if we always hit the same error
   // We don't test the whole array 'cause we want to keep the ordering
+  size_t ts = std::time(nullptr);
   if (call_info.fails.size() && call_info.fails.back() == rsn)
+  {
     ++call_info.fails.back().hit;
+    call_info.fails.back().last_timestamp = ts;
+  }
   else
-    call_info.fails.push_back(rsn);
+    call_info.fails.push_back(neam::r::reason{rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
 }
 
+neam::r::introspect neam::r::function_call::get_introspect() const
+{
+  return neam::r::introspect(call_info, call_info_index, se);
+}
 
 void neam::r::internal::__addr__() {}

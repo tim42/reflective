@@ -1,9 +1,9 @@
 //
-// file : ct_info.hpp
-// in : file:///home/tim/projects/reflective/reflective/ct_info.hpp
+// file : signal.hpp
+// in : file:///home/tim/projects/reflective/reflective/signal.hpp
 //
-// created by : Timothée Feuillet on linux.site
-// date: 20/01/2016 18:24:55
+// created by : Timothée Feuillet on linux-vnd3.site
+// date: 31/01/2016 23:20:21
 //
 //
 // Copyright (C) 2016 Timothée Feuillet
@@ -23,26 +23,26 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 
-#ifndef __N_5941161391869237784_784459826__CT_INFO_HPP__
-# define __N_5941161391869237784_784459826__CT_INFO_HPP__
+#ifndef __N_1503693175951222115_1733287383__SIGNAL_HPP__
+# define __N_1503693175951222115_1733287383__SIGNAL_HPP__
 
-#include <reflective/tools/ct_string.hpp>
+#include <initializer_list>
 
 namespace neam
 {
   namespace r
   {
-    /// \brief some informations about the compilation (yes, some really basic ones)
-    namespace ct
-    {
-      constexpr neam::string_t build_date = __DATE__ " " __TIME__;
-      constexpr neam::string_t build_file = __BASE_FILE__;
-    } // namespace ct
+    /// \brief If you install a custom signal handler, but still want reflective to reports signals
+    /// Just call this.
+    void on_signal(int sig);
+
+    /// \brief Install the default signal handler on the given signal list
+    /// \note The default signal handler behavior is to "report, save and die"
+    void install_default_signal_handler(std::initializer_list<int> signals);
   } // namespace r
 } // namespace neam
 
-#endif /*__N_5941161391869237784_784459826__CT_INFO_HPP__*/
+#endif /*__N_1503693175951222115_1733287383__SIGNAL_HPP__*/
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; 
-
 

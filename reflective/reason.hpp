@@ -6,7 +6,7 @@
 // date: 27/01/2016 15:58:00
 //
 //
-// Copyright (C) 2014 Timothée Feuillet
+// Copyright (C) 2016 Timothée Feuillet
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -41,7 +41,11 @@ namespace neam
       const char *file = nullptr;
       size_t line = 0;
 
+      // --- //
+
       size_t hit = 1; ///< \brief Do not touch this.
+      size_t initial_timestamp = 0; ///< \brief Do not touch this.
+      size_t last_timestamp = 0; ///< \brief Do not touch this.
 
       /// \brief Used to append the filename & the line to a predefined reason (like those below)
       /// \see REASON_INFO
@@ -56,7 +60,10 @@ namespace neam
       /// \brief Equality operator
       constexpr bool operator == (const reason &o) const
       {
-        return o.line == this->line && !strcmp(o.file, this->file) && !strcmp(o.message, this->message) && !strcmp(o.type, this->type);
+        return o.line == this->line
+               && ((o.file == nullptr && o.file == this->file) || !strcmp(o.file ? o.file : "", this->file ? this->file : ""))
+               && ((o.message == nullptr && o.message == this->message) || !strcmp(o.message ? o.message : "", this->message ? this->message : ""))
+               && ((o.type == nullptr && o.type == this->type) || !strcmp(o.type ? o.type : "", this->type ? this->type : ""));
       }
 
       /// \brief Inequality operator

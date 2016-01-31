@@ -1,9 +1,9 @@
 //
-// file : ct_info.hpp
-// in : file:///home/tim/projects/reflective/reflective/ct_info.hpp
+// file : config.hpp
+// in : file:///home/tim/projects/reflective/reflective/config.hpp
 //
-// created by : Timothée Feuillet on linux.site
-// date: 20/01/2016 18:24:55
+// created by : Timothée Feuillet on linux-vnd3.site
+// date: 31/01/2016 23:05:18
 //
 //
 // Copyright (C) 2016 Timothée Feuillet
@@ -23,26 +23,23 @@
 // 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 //
 
-#ifndef __N_5941161391869237784_784459826__CT_INFO_HPP__
-# define __N_5941161391869237784_784459826__CT_INFO_HPP__
-
-#include <reflective/tools/ct_string.hpp>
+#ifndef __N_1434750452659720710_1253467611__CONFIG_HPP__
+# define __N_1434750452659720710_1253467611__CONFIG_HPP__
 
 namespace neam
 {
   namespace r
   {
-    /// \brief some informations about the compilation (yes, some really basic ones)
-    namespace ct
+    namespace conf
     {
-      constexpr neam::string_t build_date = __DATE__ " " __TIME__;
-      constexpr neam::string_t build_file = __BASE_FILE__;
-    } // namespace ct
+      extern bool monitor_self_time/* = false*/;
+      extern bool monitor_global_time/* = false*/;
+      extern const char *out_file/* = "./.out.nr"*/;
+    } // namespace conf
   } // namespace r
 } // namespace neam
 
-#endif /*__N_5941161391869237784_784459826__CT_INFO_HPP__*/
+#endif /*__N_1434750452659720710_1253467611__CONFIG_HPP__*/
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; 
-
 
