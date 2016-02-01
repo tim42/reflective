@@ -5,7 +5,24 @@ It can be used to create bug reports, monitor running programs across multiple r
 
 ### note
 
-reflective is not even in alpha stage and was started at most a week ago.
+**reflective is not even in alpha stage and was started at most a week ago.**
+
+to setup the cloned repository:
+```
+git submodule init
+git submodule update
+```
+
+to build (on linux / macOS):
+```
+mkdir build
+cd build
+cmake ..
+make
+```
+
+tested with gcc 5.2.1 and clang 3.7.0
+All you need is a c++14 compiler, a c++14 STL, `sigaction()` and `time()` support in your OS (so, no MS windows as it does not provides `sigaction`)
 
 ### versus valgrind (memcheck, ca{che,ll}grind)
 
@@ -88,10 +105,12 @@ void f()
 
 ### future / TODO
 
-- fix the lambda support
-- fix the multi-threading support (add mutexes)
+- support windows by only using the `signal` function instead of `sigaction`
+- create tools to read and output data/information from reflective save file
 - add conditional execution based on the average duration time.
 - add introspection abilities for monitoring regression on duration times
+- fix the lambda support
+- fix the multi-threading support (add mutexes)
 - benchmark the impact on the worst case of reflective (calling repetitively one empty function and calling a lot of different empty functions)
 
 ### author
