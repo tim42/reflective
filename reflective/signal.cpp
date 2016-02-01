@@ -47,6 +47,20 @@ void neam::r::on_signal(int sig)
 
 void neam::r::install_default_signal_handler(std::initializer_list<int> signals)
 {
+#ifdef _WIN32
+  auto handler = [](int sig)
+  {
+    // report & save
+    on_signal(sig);
+
+    // die...
+    signal(sig, SIG_DFL);
+    raise(sig);
+  };
+
+  for (int sig : signals)
+    signal(sig, handler);
+#else
   struct sigaction sct;
   sct.sa_handler = [](int sig)
   {
@@ -63,5 +77,6 @@ void neam::r::install_default_signal_handler(std::initializer_list<int> signals)
   // register sig handlers
   for (int sig : signals)
     sigaction(sig, &sct, nullptr);
+#endif
 }
 
