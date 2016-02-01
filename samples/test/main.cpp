@@ -9,7 +9,6 @@
 #include <reflective/reflective.hpp>
 #include <reflective/signal.hpp>
 #include <tools/logger/logger.hpp>
-#include <tools/backtrace.hpp>
 #include "introspect_helper.hpp"
 
 class s

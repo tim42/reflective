@@ -28,14 +28,14 @@
 
 #include <deque>
 #include <mutex>
-#include <stack_entry.hpp>
-#include <call_info_struct.hpp>
+#include "stack_entry.hpp"
+#include "call_info_struct.hpp"
 
 namespace neam
 {
   namespace cr
   {
-    class persistence;
+    struct persistence;
   } // namespace cr
 
   namespace r
@@ -68,7 +68,7 @@ namespace neam
           }
 
         private:
-          friend class neam::cr::persistence;
+          friend struct neam::cr::persistence;
       };
 
       /// \brief This is a purely thread local thing

@@ -27,7 +27,7 @@
 # define __N_54570708560285988_386345818__CALL_STRUCT_HPP__
 
 #include <cstdint>
-#include "tools/ct_string.hpp"
+#include <tools/ct_string.hpp>
 #include "reason.hpp"
 
 namespace neam

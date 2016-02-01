@@ -30,6 +30,8 @@
 #include "function_call.hpp"
 #include "introspect.hpp"
 
+#define N_REFLECTIVE_PRESENT
+
 namespace neam
 {
   namespace r
@@ -40,4 +42,3 @@ namespace neam
 #endif /*__N_4168771271111388602_1810926811__REFLECTIVE_HPP__*/
 
 // kate: indent-mode cstyle; indent-width 2; replace-tabs on; 
-

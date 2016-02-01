@@ -74,6 +74,7 @@ namespace neam
     ///   // ...
     /// }
     /// \endcode
+    /// \see introspect
     class function_call
     {
       private:
@@ -226,8 +227,10 @@ namespace neam
 
 /// \brief Workaround some C++ limitations. Also provide what is necessary for the name, hash and func parameters of neam::r::function_call()
 /// \note Please provide the full hierarchy of namespaces if possible
-#define N_LAMBDA_INFO(f)    N__I__LNAME(f), ::neam::r::internal::generate_id(N__I__LNAME(f), &f), ::neam::r::internal::type<decltype(f)>()
+#define N_LAMBDA_INFO(f)    N__I__LNAME(f), ::neam::r::internal::hash_from_str(N__I__LNAME(f)), ::neam::r::internal::type<decltype(f)>()
 // #define N_FUNCTION_INFO(f)  N__I__FNAME(f), ::neam::r::internal::force_uint32_t<::neam::r::internal::hash_from_str(N__I__FNAME(f))>::value, neam::embed::embed<decltype(&f), f>()
+
+#define N_NAME_INFO(n)    N_EXP_STRINGIFY(n), ::neam::r::internal::hash_from_str(N_EXP_STRINGIFY(n))
 
 /// \brief Workaround some C++ limitations. Also provide what is necessary for the name, hash and func parameters of neam::r::function_call()
 /// \note Please provide the full hierarchy of namespaces if possible
@@ -236,6 +239,9 @@ namespace neam
 /// \brief Workaround some C++ limitations. Also provide what is necessary for the name, hash and func parameters of neam::r::function_call()
 /// \note Please provide the full hierarchy of namespaces if possible
 #define N_PRETTY_LAMBDA_INFO(f)    __PRETTY_FUNCTION__, N_LAMBDA_INFO(f)
+
+#define N_PRETTY_NAME_INFO(n)    __PRETTY_FUNCTION__, N_NAME_INFO(n)
+
 
 // #define N__I__FNAME(f)    __FILE__ ":" N_EXP_STRINGIFY(__LINE__) "#" N_EXP_STRINGIFY(f) // if_wont_fail will not be possible
 #define N__I__FNAME(f)    N_EXP_STRINGIFY(f)

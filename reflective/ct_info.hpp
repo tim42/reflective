@@ -26,7 +26,7 @@
 #ifndef __N_5941161391869237784_784459826__CT_INFO_HPP__
 # define __N_5941161391869237784_784459826__CT_INFO_HPP__
 
-#include <reflective/tools/ct_string.hpp>
+#include <tools/ct_string.hpp>
 
 namespace neam
 {

@@ -8,6 +8,7 @@ void neam::r::function_call::common_init()
   ++call_info.call_count; // TODO: a more threadsafe thing
 
   prev = tl_data->top;
+  se = nullptr;
   if (prev)
   {
     prev->self_chrono.pause(); // pause the previous self-chrono
@@ -29,21 +30,23 @@ neam::r::function_call::~function_call()
   // TODO: thread safety
   if (self_time_monitoring)
   {
-    call_info.average_self_time = (call_info.average_self_time * call_info.average_self_time_count + self_chrono.delta()) / (call_info.average_self_time_count + 1.);
+    const double delta = self_chrono.get_accumulated_time();
+    call_info.average_self_time = (call_info.average_self_time * call_info.average_self_time_count + delta) / (call_info.average_self_time_count + 1.);
     ++call_info.average_self_time_count;
     if (se)
     {
-      se->average_self_time = (se->average_self_time * se->average_self_time_count + self_chrono.delta()) / (se->average_self_time_count + 1.);
+      se->average_self_time = (se->average_self_time * se->average_self_time_count + delta) / (se->average_self_time_count + 1.);
       ++se->average_self_time_count;
     }
   }
   if (global_time_monitoring)
   {
-    call_info.average_global_time = (call_info.average_global_time * call_info.average_global_time_count + global_chrono.delta()) / (call_info.average_global_time_count + 1.);
+    const double delta = global_chrono.get_accumulated_time();
+    call_info.average_global_time = (call_info.average_global_time * call_info.average_global_time_count + delta) / (call_info.average_global_time_count + 1.);
     ++call_info.average_global_time_count;
     if (se)
     {
-      se->average_global_time = (se->average_global_time * se->average_global_time_count + global_chrono.delta()) / (se->average_global_time_count + 1.);
+      se->average_global_time = (se->average_global_time * se->average_global_time_count + delta) / (se->average_global_time_count + 1.);
       ++se->average_global_time_count;
     }
   }
@@ -56,8 +59,7 @@ neam::r::function_call::~function_call()
 
   tl_data->top = prev;
 
-
-  if (!prev) // TODO: conf for a real name
+  if (!prev && !conf::disable_auto_save) // TODO: conf for a real name
     neam::r::sync_data_to_disk(conf::out_file); // there's nothing after us, sync data to a file
 }
 

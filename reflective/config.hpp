@@ -35,6 +35,7 @@ namespace neam
       extern bool monitor_self_time/* = false*/;
       extern bool monitor_global_time/* = false*/;
       extern const char *out_file/* = "./.out.nr"*/;
+      extern bool disable_auto_save/* = false*/;
     } // namespace conf
   } // namespace r
 } // namespace neam
