@@ -139,7 +139,7 @@ bool neam::r::introspect::set_context(const neam::r::introspect &caller)
 }
 
 
-std::vector<neam::r::reason> neam::r::introspect::get_errors(size_t count)
+std::vector<neam::r::reason> neam::r::introspect::get_failure_reasons(size_t count)
 {
   std::vector<neam::r::reason> ret;
   count = std::min(count, call_info.fails.size());

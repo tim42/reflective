@@ -105,7 +105,7 @@ namespace sample
         output_introspect_vector("call:", fnc_introspect.get_callee_list());
 
         // output the last error
-        std::vector<neam::r::reason> last_error = fnc_introspect.get_errors(1);
+        std::vector<neam::r::reason> last_error = fnc_introspect.get_failure_reasons(1);
         if (last_error.size())
         {
           neam::r::reason r = last_error.back();

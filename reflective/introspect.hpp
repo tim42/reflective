@@ -191,7 +191,7 @@ namespace neam
         /// \brief Return the last \e count errors for the function, most recent last
         /// \param[in] count The number of errors to return
         /// \note this method IS NOT context dependent, but always return errors from the global error list
-        std::vector<reason> get_errors(size_t count = 10);
+        std::vector<reason> get_failure_reasons(size_t count = 10);
 
         /// \brief This function tests if the given function will be likely to fail (fail ratio > 0.5 by default) and returns an object with some properties
         /// to do some kind of conditional execution based on fails
