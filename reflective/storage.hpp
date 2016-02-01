@@ -26,7 +26,6 @@
 #ifndef __N_1052045765701734561_8562785__STORAGE_HPP__
 # define __N_1052045765701734561_8562785__STORAGE_HPP__
 
-#include <persistence/persistence/persistence.hpp>
 #include <deque>
 #include <mutex>
 #include <stack_entry.hpp>
@@ -34,6 +33,11 @@
 
 namespace neam
 {
+  namespace cr
+  {
+    class persistence;
+  } // namespace cr
+
   namespace r
   {
     class function_call;
@@ -64,7 +68,7 @@ namespace neam
           }
 
         private:
-          friend neam::cr::persistence;
+          friend class neam::cr::persistence;
       };
 
       /// \brief This is a purely thread local thing

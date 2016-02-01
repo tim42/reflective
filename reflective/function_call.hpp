@@ -27,6 +27,7 @@
 # define __N_1929495401479333861_60769628__FUNCTION_CALL_HPP__
 
 #include <tools/demangle.hpp>
+#include <tools/embed.hpp>
 
 #include <tools/macro.hpp>
 #include <tools/chrono.hpp>
