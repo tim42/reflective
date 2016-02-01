@@ -22,14 +22,14 @@ make
 ```
 
 tested with gcc 5.2.1 and clang 3.7.0
-All you need is a c++14 compiler, a c++14 STL, `sigaction()` and `time()` support in your OS (so, no MS windows as it does not provides `sigaction`)
+All you need is a c++14 compiler, a c++14 STL, `sigaction()` (or `signal()`) and `time()` support in your OS
 
 ### versus valgrind (memcheck, ca{che,ll}grind)
 
 Reflective is faster, but can't do the same job: valgrind memcheck will track memory errors, a task that reflective can't do;
 cachegrind will profile the cache whereas reflective don't;
 callgrind will create a nice callgraph without any modification of your program (except running it in debug mode, and way slower),
-reflective will also create a callgraph but asking the dev to add some code to make it working (one line of code per function to monitor).
+reflective will also create a callgraph but will ask the dev to add some code to make it working (one line of code per function to monitor).
 
 But if you have a program with a lot of computing (like a game), running in valgrind is sometime not an option (more notably when the game is run by alpha/beta testers).
 But you still want to track down bugs and performance issues. (and who never stumbled upon a crash/... that randomly appear, but NEVER in a memory error detector/profiling tool ?)
@@ -42,7 +42,7 @@ The user can also report custom errors or warnings, expanding the range of possi
 
 ### versus gprof
 
-Reflective is probably slower, but load and save its data, expanding it at each time the program runs. It also saves a full callgraph and does not use statistical sampling.
+Reflective is a bit slower, but could load and save its data, expanding it at each time the program runs. It also saves a full callgraph and does not use statistical sampling.
 Reflective also report errors, call count, average self/global times on instrumented functions and only monitor a limited set of functions.
 A program can also be used with reflective while being build in release mode, and the generated data is available for the program to use at runtime.
 
