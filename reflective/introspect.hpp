@@ -29,6 +29,8 @@
 #include <cstdint>
 #include <vector>
 
+#include <tools/embed.hpp>
+
 #include "storage.hpp"
 #include "reason.hpp"
 #include "call_info_struct.hpp"
@@ -207,9 +209,15 @@ namespace neam
           size_t o_call_info_index;
           internal::call_info_struct &o_call_info = internal::get_call_info_struct<FuncType, Func>(hash, name, nullptr, &o_call_info_index);
           internal::stack_entry *o_context = nullptr;
+          if (context)
+            o_context = context->get_children_stack_entry(o_call_info_index);
 
-          float ratio = get_failure_ratio();
-          size_t count = get_call_count();
+          introspect child(o_call_info, o_call_info_index, o_context);
+          if (!child.is_faithfull())
+            child.remove_context();
+
+          float ratio = child.get_failure_ratio();
+          size_t count = child.get_call_count();
 
           return internal::if_wont_fail<FuncType, Func>(count, ratio);
         }
