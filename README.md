@@ -60,7 +60,8 @@ namespace a
 
       void f()
       {
-        neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(a::b::f)); // this line is what makes reflective working
+        // this line is what makes reflective working
+        neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(a::b::f));
         // NOTE: you should always provide the whole path to the function, like `a::b::f`
 
         g();
@@ -95,9 +96,12 @@ void f()
     });
 
   // retrieve the last 100 failure reasons of `a::b::f`
-  // a failure reason (the `neam::r::reason` object) contain the failure type (death by signal, syscall failure, file not found, exception, ...),
-  // the file and line where the error has occurred, a message, the number of consecutive time the error has been raised and the timestamp range.
-  // the list of failure is guaranteed to be strictly ordered in time (not timestamp range can overlap).
+  // a failure reason (the `neam::r::reason` object) contain the failure type
+  //  (death by signal, syscall failure, file not found, exception, ...),
+  // the file and line where the error has occurred, a message, the number of
+  // consecutive time the error has been raised and the timestamp range.
+  // the list of failure is guaranteed to be strictly ordered in time
+  // (no timestamp range can overlap).
   std::vector<neam::r::reason> failure_reasons = itp.get_failure_reasons(100);
 }
 
@@ -105,10 +109,9 @@ void f()
 
 ### future / TODO
 
-- support windows by only using the `signal` function instead of `sigaction`
 - create tools to read and output data/information from reflective save file
-- add conditional execution based on the average duration time.
 - add introspection abilities for monitoring regression on duration times
+- add conditional execution based on the average duration time.
 - fix the lambda support
 - fix the multi-threading support (add mutexes)
 - benchmark the impact on the worst case of reflective (calling repetitively one empty function and calling a lot of different empty functions)
