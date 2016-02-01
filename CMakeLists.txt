@@ -60,6 +60,7 @@ add_subdirectory("./${PROJ_NAME}/persistence")
 include(cmake/flags.cmake)
 
 include_directories("./${PROJ_NAME}")
+include_directories("./${PROJ_NAME}/persistence")
 
 include_directories("./")
 
@@ -74,6 +75,11 @@ endif()
 # build the samples
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   add_subdirectory(samples/test)
+endif()
+
+# build the tools
+if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
+  add_subdirectory(tools/report)
 endif()
 
 # copy
