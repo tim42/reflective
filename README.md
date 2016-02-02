@@ -32,6 +32,8 @@ A `callgraph2dot` tool comes with reflective. It transform a reflective output f
 It's the only tool present for the moment, but this one is important as it allows a visual preview of the data stored on-disk by persistence.
 An interesting thing to note, this tool is entirely written without acceding to the internal API of reflective.
 
+Example of an output dot graph (with branch pruning activated): ![callgraph](http://i.imgur.com/npRY6gQ.png)
+
 ### reflective versus valgrind (memcheck, ca{che,ll}grind)
 
 Reflective is faster, but can't do the same job: valgrind memcheck will track memory errors, a task that reflective can't do;
