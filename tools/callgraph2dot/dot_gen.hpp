@@ -67,6 +67,13 @@ namespace neam
           }
         }
 
+        /// \brief Change the way the weight is computed
+        void set_weight_properties(bool with_global_time = true, bool with_callcount = true)
+        {
+          weight_with_global_time = with_global_time;
+          weight_with_callcount = with_callcount;
+        }
+
       private:
         void walk_root(std::ostream &os, neam::r::introspect &root, float &error_factor, bool &insignificant);
         void walk_get_max(neam::r::introspect &root);
@@ -79,8 +86,11 @@ namespace neam
         std::map<size_t, neam::r::introspect> introspect_labels;
         float max_count = 1.f;
         float max_self = 0.000001f;
+        size_t max_self_count = 0;
         size_t counter = 0;
         bool average_call_count = true; // average the number of call count over the number of time the program has been launched
+        bool weight_with_global_time = true;
+        bool weight_with_callcount = true;
         bool out_error = true;
         bool trace_full_error_path = true;
         bool remove_insignificant = true;

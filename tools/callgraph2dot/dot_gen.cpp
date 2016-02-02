@@ -20,6 +20,7 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
     float error_factor;
     bool insignificant = false;
     walk_get_max(*root);
+    max_self /= float(max_self_count);
     walk_root(os, *root, error_factor, insignificant);
     if (!insignificant)
       is_root[root->get_name()] = true;
@@ -29,6 +30,7 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
     std::vector<neam::r::introspect> roots = neam::r::introspect::get_root_function_list();
     for (neam::r::introspect &it : roots)
       walk_get_max(it);
+    max_self /= float(max_self_count);
 
     for (neam::r::introspect &it : roots)
     {
@@ -87,9 +89,9 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
     }
 
     // print the label for the node
-    os << "  N" << it.first << " [label=" << std::quoted(str) << ";";
+    os << "  N" << it.first << " [label=" << std::quoted(str) << ";shape=box;";
     if (is_root[it.second.get_name()])
-      os << "shape=box;penwidth=4;fontcolor=blue;";
+      os << "penwidth=4;fontcolor=blue;";
     os << "];\n";
   }
 
@@ -119,7 +121,8 @@ void neam::r::callgraph_to_dot::walk_get_max(neam::r::introspect &root)
   std::vector<neam::r::introspect> callees = root.get_callee_list();
 
   max_count = std::max(max_count, float(root.get_call_count()));
-  max_self = std::max(max_self, float(root.get_average_self_duration()));
+  max_self += float(root.get_average_self_duration());
+  max_self_count++;
 
   for (neam::r::introspect &callee : callees)
     walk_get_max(callee);
@@ -158,9 +161,12 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
       std::pair<double, std::string> gbl_tm = get_time(callee.get_average_duration());
 
       // output the edge
-      float weight = std::max(float(callee.get_call_count()) / (max_count / 10) * 2.5f, 0.45f);
-      weight += std::max(float(callee.get_average_self_duration()) / (max_self / 10) * 2.5f, 0.45f);
-      weight = std::min(weight, 5.f);
+      float weight = 0.f;
+      if (weight_with_callcount)
+        weight = std::max(float(callee.get_call_count()) / (max_count) * 3.5f, 0.45f);
+      if (weight_with_global_time)
+        weight += std::max(float(callee.get_average_duration()) / (max_self) * 3.5f, 0.45f);
+      weight = std::min(weight, 6.f);
       os << "  N" << idx << " -> N" << subidx << " ["
          << "label=\" " << callee_call_count << "\\n"
          << " self " << size_t(self_tm.first) << self_tm.second << "s\\n"

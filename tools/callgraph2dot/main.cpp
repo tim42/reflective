@@ -23,6 +23,8 @@ int main(int argc, char **argv)
   float min_gbl_time;
   std::string input_file;
   std::string output_file;
+  bool weight_with_global_time;
+  bool weight_with_callcount;
 
   // parse cmdline arguments
   boost::program_options::options_description desc("Allowed options");
@@ -31,7 +33,10 @@ int main(int argc, char **argv)
     ("version,v", "print version and exit")
 
     ("input,i", boost::program_options::value<std::string>(&input_file), "the input file to use (must be a reflective output file)")
-    ("o", boost::program_options::value<std::string>(&output_file)->default_value("-"), "the output file ( '-' for stdout)")
+    ("output,o", boost::program_options::value<std::string>(&output_file)->default_value("-"), "the output file ( '-' for stdout)")
+
+    ("weight-with-global-time,G", boost::program_options::value<bool>(&weight_with_global_time)->default_value(true), "account the global-time in the weight of an edge (its 'boldness')")
+    ("weight-with-callcount,C", boost::program_options::value<bool>(&weight_with_callcount)->default_value(true), "account the call count in the weight of an edge (its 'boldness')")
 
     ("no-failure-reason,n", "the output graph will NOT include the failures report of the program")
     ("no-failure-reason-full-trace", "the output graph will NOT include the full path to the error")
@@ -79,6 +84,8 @@ int main(int argc, char **argv)
 
   // create the callgraph_to_dot object
   neam::r::callgraph_to_dot ctd;
+
+  ctd.set_weight_properties(weight_with_global_time, weight_with_callcount);
 
   if (vm.count("remove-insignificant-branch"))
     ctd.remove_insignificant_branch(true, min_call_count, min_gbl_time);
