@@ -88,6 +88,9 @@ namespace neam
     static constexpr reason exception_reason = reason {"exception caught"};
     static constexpr reason assert_reason = reason {"assertion is false"};
 
+    static constexpr reason file_not_found_reason = reason {"file not found"};
+    static constexpr reason error_reason = reason {"error"}; // hum.
+
     static constexpr reason segfault_reason = reason {"SIGSEGV"};
     static constexpr reason abort_reason = reason {"SIGABRT"};
     static constexpr reason floating_point_exception_reason = reason {"SIGFPE"};
