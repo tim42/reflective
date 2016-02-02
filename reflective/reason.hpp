@@ -71,6 +71,15 @@ namespace neam
       {
         return !(*this == o);
       }
+
+      /// \brief < operator (for std::map, ...)
+      constexpr bool operator < (const reason &o) const
+      {
+        return o.line < this->line
+               || (!!o.file < !!this->file) || strcmp(o.file ? o.file : "", this->file ? this->file : "") < 0
+               || (!!o.message < !!this->message) || strcmp(o.message ? o.message : "", this->message ? this->message : "") < 0
+               || (!!o.type < !!this->type) || strcmp(o.type ? o.type : "", this->type ? this->type : "") < 0;
+      }
     };
 
 /// \brief To be used to fill the operator() automatically

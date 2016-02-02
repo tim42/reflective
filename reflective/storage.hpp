@@ -158,6 +158,11 @@ namespace neam
     /// \brief Load from the disk
     void load_data_from_disk(const std::string &file);
 
+    /// \brief Return the number of time the program has been launched
+    static inline size_t get_launch_count()
+    {
+      return internal::get_global_data()->launch_count;
+    }
   } // namespace r
 } // namespace neam
 

@@ -164,6 +164,22 @@ namespace neam
           return call_info.name;
         }
 
+        /// \brief Return the information string
+        /// \note could be nullptr if nothing is stored
+        /// DO NOT DELETE / FREE the returned pointer
+        const char *get_info_string() const
+        {
+          return call_info.info;
+        }
+
+        /// \brief Return the VERY-NOT-pretty name
+        /// DO NOT DELETE / FREE the returned pointer
+        /// \see get_pretty_name()
+        const char *get_name() const
+        {
+          return call_info.name;
+        }
+
         /// \brief Return the probability of a incoming failure
         /// \note Unlike get_failure_rate(), it will account all calls of the function
         /// \note This call only handle the function, not any of its possible sub-calls

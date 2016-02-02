@@ -85,10 +85,12 @@ namespace neam
         /// \see N_PRETTY_FUNCTION_INFO
         /// \code auto self_call = function_call(N_PRETTY_FUNCTION_INFO(my_class::my_function)); \endcode
         template<typename FuncType, FuncType Func>
-        function_call(const char *pretty_function, const char *const name, uint32_t hash, neam::embed::embed<FuncType, Func>)
+        function_call(const char *pretty_function, const char *info, const char *const name, uint32_t hash, neam::embed::embed<FuncType, Func>)
           : call_info_index(0), call_info(internal::get_call_info_struct<FuncType, Func>(hash, name, pretty_function, &call_info_index)),
             global(internal::get_global_data()), tl_data(internal::get_thread_data())
         {
+          if (info && !call_info.info)
+            call_info.info = info;
           common_init();
         }
 
@@ -97,10 +99,12 @@ namespace neam
         /// \see N_PRETTY_LAMBDA_INFO
         /// \code neam::r::function_call self_call(N_PRETTY_LAMBDA_INFO(my_lbd_variable)); \endcode
         template<typename FuncType>
-        function_call(const char *pretty_function, const char *const name, uint32_t hash, internal::type<FuncType>)
+        function_call(const char *pretty_function, const char *info, const char *const name, uint32_t hash, internal::type<FuncType>)
           : call_info_index(0), call_info(internal::get_call_info_struct<FuncType>(hash, name, pretty_function, &call_info_index)),
             global(internal::get_global_data()), tl_data(internal::get_thread_data())
         {
+          if (info && !call_info.info)
+            call_info.info = info;
           common_init();
         }
 
@@ -108,18 +112,20 @@ namespace neam
         /// \see N_FUNCTION_INFO
         /// \code neam::r::function_call self_call(N_FUNCTION_INFO(my_class::my_function)); \endcode
         template<typename FuncType, FuncType Func>
-        function_call(const char *const name, uint32_t hash, neam::embed::embed<FuncType, Func>, FuncType &f) : function_call(nullptr, name, hash, neam::embed::embed<FuncType, Func>(), f) {}
+        function_call(const char *const name, uint32_t hash, neam::embed::embed<FuncType, Func>, FuncType &f) : function_call(nullptr, nullptr, name, hash, neam::embed::embed<FuncType, Func>(), f) {}
 
         /// \brief Construct a function call object for a lambda, without the pretty function thing
         /// \see N_LAMBDA_INFO
         /// \code neam::r::function_call self_call(N_LAMBDA_INFO(my_lbd_variable)); \endcode
         template<typename FuncType>
-        function_call(const char *const name, uint32_t hash, internal::type<FuncType>) : function_call(nullptr, name, hash ? hash : internal::hash_from_str(name), internal::type<FuncType>()) {}
+        function_call(const char *const name, uint32_t hash, internal::type<FuncType>)
+          : function_call(nullptr, nullptr, name, hash ? hash : internal::hash_from_str(name), internal::type<FuncType>()) {}
 
         /// \brief If you use this, you have to really know what you're doing...
-        function_call(const char *const name, uint32_t hash = 0) : function_call(nullptr, name, hash, internal::type<void>()) {}
+        function_call(const char *const name, uint32_t hash = 0) : function_call(nullptr, nullptr, name, hash, internal::type<void>()) {}
         /// \brief If you use this, you have to really know what you're doing...
-        function_call(const char *pretty_function, const char *const name, uint32_t hash = 0) : function_call(pretty_function, name, hash ? hash : internal::hash_from_str(name), internal::type<void>()) {}
+        function_call(const char *pretty_function, const char *info, const char *const name, uint32_t hash = 0)
+          : function_call(pretty_function, info, name, hash ? hash : internal::hash_from_str(name), internal::type<void>()) {}
 
         /// \brief Get the current/active function call
         /// \warning The returned pointer is ONLY valid in the current scope and should never be stored
@@ -230,22 +236,31 @@ namespace neam
 #define N_LAMBDA_INFO(f)    N__I__LNAME(f), ::neam::r::internal::hash_from_str(N__I__LNAME(f)), ::neam::r::internal::type<decltype(f)>()
 // #define N_FUNCTION_INFO(f)  N__I__FNAME(f), ::neam::r::internal::force_uint32_t<::neam::r::internal::hash_from_str(N__I__FNAME(f))>::value, neam::embed::embed<decltype(&f), f>()
 
-#define N_NAME_INFO(n)    N_EXP_STRINGIFY(n), ::neam::r::internal::hash_from_str(N_EXP_STRINGIFY(n))
+#define N_ARBITRARY_INFO(n) n, ::neam::r::internal::hash_from_str(n)
 
 /// \brief Workaround some C++ limitations. Also provide what is necessary for the name, hash and func parameters of neam::r::function_call()
 /// \note Please provide the full hierarchy of namespaces if possible
-#define N_PRETTY_FUNCTION_INFO(f)  __PRETTY_FUNCTION__, N_FUNCTION_INFO(f)
+#define N_PRETTY_FUNCTION_INFO(f)  __PRETTY_FUNCTION__, N__I__NNAME, N_FUNCTION_INFO(f)
 
 /// \brief Workaround some C++ limitations. Also provide what is necessary for the name, hash and func parameters of neam::r::function_call()
 /// \note Please provide the full hierarchy of namespaces if possible
-#define N_PRETTY_LAMBDA_INFO(f)    __PRETTY_FUNCTION__, N_LAMBDA_INFO(f)
+#define N_PRETTY_LAMBDA_INFO(f)    __PRETTY_FUNCTION__, N__I__NNAME, N_LAMBDA_INFO(f)
 
-#define N_PRETTY_NAME_INFO(n)    __PRETTY_FUNCTION__, N_NAME_INFO(n)
+/// \brief Use this is if you have to monitor constructors, destructors, lambdas, strange things and awkward moments
+/// \note Using this will work in every case (but could be a little bit slower than N_*FUNCTION_INFO as you don't have cache)
+/// \note Using this, you will not be able to use the function with if_wont_fail and introspecting that function will not be possible directly
+#define N_PRETTY_NAME_INFO         __PRETTY_FUNCTION__, N__I__NNAME, N__I__NNAME, ::neam::r::internal::hash_from_str(N__I__NNAME)
+
+/// \brief Use this is if you have to monitor constructors, destructors, lambdas, strange things and awkward moments AND want to be able to retrieve the name easily
+/// \note Using this will work in every case (but could be a little bit slower than N_*FUNCTION_INFO as you don't have cache)
+/// \note Using this, you will not be able to use the function with if_wont_fail but direct introspection will work
+#define N_PRETTY_ARBITRARY_INFO(n) __PRETTY_FUNCTION__, N__I__NNAME, n, ::neam::r::internal::hash_from_str(n)
 
 
 // #define N__I__FNAME(f)    __FILE__ ":" N_EXP_STRINGIFY(__LINE__) "#" N_EXP_STRINGIFY(f) // if_wont_fail will not be possible
 #define N__I__FNAME(f)    N_EXP_STRINGIFY(f)
 #define N__I__LNAME(f)    typeid(f).name()    // works only for lambdas
+#define N__I__NNAME       __FILE__ ": " N_EXP_STRINGIFY(__LINE__)
   } // namespace r
 } // namespace neam
 

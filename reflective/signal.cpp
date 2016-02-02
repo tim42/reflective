@@ -16,22 +16,22 @@ void neam::r::on_signal(int sig)
     switch (sig)
     {
       case SIGSEGV:
-        fc->fail(segfault_reason(N_REASON_INFO), "segmentation fault signal");
+        fc->fail(segfault_reason(N_REASON_INFO, "segmentation fault signal"));
         break;
       case SIGABRT:
-        fc->fail(abort_reason(N_REASON_INFO), "abort signal");
+        fc->fail(abort_reason(N_REASON_INFO, "abort signal"));
         break;
       case SIGFPE:
-        fc->fail(floating_point_exception_reason(N_REASON_INFO), "floating point exception signal (dividing by 0 is bad)");
+        fc->fail(floating_point_exception_reason(N_REASON_INFO, "floating point exception signal (dividing by 0 is bad)"));
         break;
       case SIGILL:
-        fc->fail(illegal_instruction_reason(N_REASON_INFO), "illegal instruction");
+        fc->fail(illegal_instruction_reason(N_REASON_INFO, "illegal instruction"));
         break;
       case SIGINT:
-        fc->fail(illegal_instruction_reason(N_REASON_INFO), "keyboard interrupt (well, that's not an error)");
+        fc->fail(illegal_instruction_reason(N_REASON_INFO, "keyboard interrupt (well, that's not an error)"));
         break;
       default:
-        fc->fail(unknown_signal_reason(N_REASON_INFO), "not a SIGSEGV, SIGABRT, SIGFPE, SIGINT, nor a SIGILL");
+        fc->fail(unknown_signal_reason(N_REASON_INFO, "not a SIGSEGV, SIGABRT, SIGFPE, SIGINT, nor a SIGILL"));
         break;
     }
   }

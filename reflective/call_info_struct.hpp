@@ -43,6 +43,7 @@ namespace neam
         uint32_t name_hash; ///< \brief Used to have a faster strcmp() on name
 
         const char *pretty_name = nullptr; ///< \brief Optional, mostly used to pretty print the name.
+        const char *info = nullptr; ///< \brief Optional, used to get file and line information
 
         // ----- //
 

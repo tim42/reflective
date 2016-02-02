@@ -89,6 +89,7 @@ namespace neam
     NCRP_DECLARE_NAME(r__call_info_struct, name);
     NCRP_DECLARE_NAME(r__call_info_struct, name_hash);
     NCRP_DECLARE_NAME(r__call_info_struct, pretty_name);
+    NCRP_DECLARE_NAME(r__call_info_struct, info);
     NCRP_DECLARE_NAME(r__call_info_struct, call_count);
     NCRP_DECLARE_NAME(r__call_info_struct, fail_count);
     NCRP_DECLARE_NAME(r__call_info_struct, average_self_time);
@@ -106,6 +107,7 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, name, names::r__call_info_struct::name),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, name_hash, names::r__call_info_struct::name_hash),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, pretty_name, names::r__call_info_struct::pretty_name),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, info, names::r__call_info_struct::info),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, fail_count, names::r__call_info_struct::fail_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, call_count, names::r__call_info_struct::call_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_self_time, names::r__call_info_struct::average_self_time),
