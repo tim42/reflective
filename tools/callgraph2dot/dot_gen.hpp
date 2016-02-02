@@ -43,21 +43,49 @@ namespace neam
         bool write_to_stream(std::ostream &os, neam::r::introspect *root = nullptr);
 
         /// \brief Set whether or not the graph should contain information about failures
-        /// (default is true)
-        void write_failure_reasons(bool do_write_them)
+        /// default is to include them and trace the full error path
+        void include_failure_reasons(bool do_include_them, bool trace_full_path = true)
         {
-          out_error = do_write_them;
+          out_error = do_include_them;
+          if (out_error)
+            trace_full_error_path = trace_full_path;
+        }
+
+        /// \brief Remove branches that are not significants
+        /// (under ten callcount, small time impact)
+        /// default is to keep them
+        /// \note an insignificant call will be kept if it has a child that is not insignificant or lead to an error (and error are included)
+        void remove_insignificant_branch(bool do_remove_them, size_t _min_call_count = 0, float _min_gbl_time = -1.f)
+        {
+          remove_insignificant = do_remove_them;
+          if (remove_insignificant)
+          {
+            if (_min_call_count > 0)
+              min_call_count = _min_call_count;
+            if (_min_gbl_time > 0)
+              min_gbl_time = _min_gbl_time;
+          }
         }
 
       private:
-        void walk_root(std::ostream &os, neam::r::introspect &root);
+        void walk_root(std::ostream &os, neam::r::introspect &root, float &error_factor, bool &insignificant);
         void walk_get_max(neam::r::introspect &root);
+        void output_reason(std::ostream &os, size_t idx, neam::r::reason &r);
+        size_t get_idx_for_introspect(const neam::r::introspect &itr);
 
       private:
-        std::map<const char *, size_t> labels;
-        float max = 1.f;
+        std::map<std::string, size_t> idxs;
+        std::map<neam::r::reason, size_t> reason_idxs;
+        std::map<size_t, neam::r::introspect> introspect_labels;
+        float max_count = 1.f;
+        float max_self = 0.000001f;
         size_t counter = 0;
+        bool average_call_count = true; // average the number of call count over the number of time the program has been launched
         bool out_error = true;
+        bool trace_full_error_path = true;
+        bool remove_insignificant = true;
+        size_t min_call_count = 10;
+        float min_gbl_time = 0.001; // 1ms
     };
   } // namespace r
 } // namespace neam

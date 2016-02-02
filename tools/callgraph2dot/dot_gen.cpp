@@ -1,6 +1,7 @@
 
 #include <map>
 #include <iomanip>
+#include <iostream>
 #include <set>
 #include "dot_gen.hpp"
 
@@ -11,14 +12,17 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
 
   os << "digraph callgraph {\n";
 
-  std::map<const char *, bool> is_root;
+  std::map<std::string, bool> is_root;
 
   // walk the roots
   if (root)
   {
+    float error_factor;
+    bool insignificant = false;
     walk_get_max(*root);
-    walk_root(os, *root);
-    is_root[root->get_pretty_name()] = true;
+    walk_root(os, *root, error_factor, insignificant);
+    if (!insignificant)
+      is_root[root->get_name()] = true;
   }
   else
   {
@@ -28,17 +32,44 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
 
     for (neam::r::introspect &it : roots)
     {
-      walk_root(os, it);
-      is_root[it.get_pretty_name()] = true;
+      float error_factor;
+      bool insignificant = false;
+      walk_root(os, it, error_factor, insignificant);
+      if (!insignificant)
+        is_root[it.get_name()] = true;
     }
   }
 
-  os << "\n";
+  os << "\n  // reasons labels\n";
 
-  for (auto &it : labels)
+  for (auto &it : reason_idxs)
   {
-    // split the string
-    std::string str = it.first;
+    // create the label
+    std::string label = it.first.type;
+    if (it.first.message)
+    {
+      label += "\n";
+      label += it.first.message;
+    }
+//     if (it.first.file)
+//     {
+//       label += "\n";
+//       label += it.first.file;
+//       label += ":" + std::to_string(it.first.line);
+//     }
+
+    // print the label for the reason
+    os << "  N" << it.second << " [label=" << std::quoted(label) << "];\n";
+  }
+
+  os << "\n  // function/methods labels\n";
+
+  for (auto &it : introspect_labels)
+  {
+    // create the label
+    std::string str = it.second.get_pretty_name();
+
+    // split the label
     for (size_t i = 0, j = 0; i < str.size(); ++i, ++j)
     {
       if (j >= 20 && (std::isspace(str[i]) || str[i] == ':'))
@@ -47,10 +78,18 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
         str.insert(i, "\n");
       }
     }
+
+    // Append the info string (if any)
+    if (it.second.get_info_string())
+    {
+      str += "\n";
+      str += it.second.get_info_string();
+    }
+
     // print the label for the node
-    os << "  N" << it.second << " [label=" << std::quoted(str) << ";";
-    if (is_root[it.first])
-      os << "shape=box;";
+    os << "  N" << it.first << " [label=" << std::quoted(str) << ";";
+    if (is_root[it.second.get_name()])
+      os << "shape=box;penwidth=4;fontcolor=blue;";
     os << "];\n";
   }
 
@@ -89,52 +128,56 @@ void neam::r::callgraph_to_dot::walk_get_max(neam::r::introspect &root)
 // walk a single root and print the graph
 // NOTE: this is recursive
 // This is not the best code I have ever written, but it works.
-void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect &root)
+void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect &root, float &error_factor, bool &insignificant)
 {
-  const char *name = root.get_pretty_name();
+  error_factor = 0.f;
+  std::string name = root.get_name();
   size_t idx;
-  if (!labels.count(name))
-  {
-    idx = counter;
-    ++counter;
-    labels[name] = idx;
-  }
-  else
-  {
-    idx = labels[name];
-  }
 
   // output the callgraph
   std::vector<neam::r::introspect> callees = root.get_callee_list();
 
   for (neam::r::introspect &callee : callees)
   {
-    walk_root(os, callee);
+    float callee_error_factor;
+    bool callee_insignificant = remove_insignificant;
+    float callee_call_count = float(callee.get_call_count());
+    if (average_call_count)
+      callee_call_count /= float(neam::r::get_launch_count() - 1); // remove the current launch count
+    if ((callee_call_count > min_call_count) || (callee.get_average_duration() > min_gbl_time))
+      callee_insignificant = false;
 
-    size_t subidx = labels[callee.get_pretty_name()];
-    std::pair<double, std::string> self_tm = get_time(callee.get_average_self_duration());
-    std::pair<double, std::string> gbl_tm = get_time(callee.get_average_duration());
+    walk_root(os, callee, callee_error_factor, callee_insignificant);
 
-    // output the edge
-    float weight = std::max(float(callee.get_call_count()) / max_count * 2.5f, 0.5f);
-           weight += std::max(float(callee.get_average_self_duration()) / max_self * 2.5f, 0.5f);
-    weight = std::min(weight, 5.f);
-    os << "  N" << idx << " -> N" << subidx << " ["
-       << "label=\" " << callee.get_call_count() << "\\n"
-                      << " self " << size_t(self_tm.first) << self_tm.second << "s\\n"
-                      << " gbl " << size_t(gbl_tm.first) << gbl_tm.second << "s" << "\";"
-//        << "weight=" << callee.get_call_count() << ";"
-       << "penwidth=" << weight << ";";
-
-    if (callee.get_failure_ratio())
+    if (!callee_insignificant)
     {
-      os << "color=\"#" << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(callee.get_failure_ratio() * 150. + 105.f), 255ul) << std::dec <<"0000\";";
-    }
+      idx = get_idx_for_introspect(root);
+      insignificant = false;
+      size_t subidx = get_idx_for_introspect(callee);
+      std::pair<double, std::string> self_tm = get_time(callee.get_average_self_duration());
+      std::pair<double, std::string> gbl_tm = get_time(callee.get_average_duration());
 
-    os << "];\n";
-    if (callee.get_failure_ratio())
-    {
-      os << "  N" << subidx << " [penwidth=3;color=\"#" << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(callee.get_failure_ratio() * 150. + 105.f), 255ul) << std::dec <<"0000\";]";
+      // output the edge
+      float weight = std::max(float(callee.get_call_count()) / (max_count / 10) * 2.5f, 0.45f);
+      weight += std::max(float(callee.get_average_self_duration()) / (max_self / 10) * 2.5f, 0.45f);
+      weight = std::min(weight, 5.f);
+      os << "  N" << idx << " -> N" << subidx << " ["
+         << "label=\" " << callee_call_count << "\\n"
+         << " self " << size_t(self_tm.first) << self_tm.second << "s\\n"
+         << " gbl " << size_t(gbl_tm.first) << gbl_tm.second << "s" << "\";"
+//        << "weight=" << weight << ";"
+         << "penwidth=" << weight << ";";
+
+      if (callee_error_factor)
+      {
+        insignificant = false;
+        if (trace_full_error_path)
+          error_factor += callee_error_factor;
+
+        os << "color=\"#" << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(callee_error_factor * 150. + 105.f), 255ul) << std::dec << "0000\";";
+      }
+
+      os << "];\n";
     }
   }
 
@@ -145,27 +188,51 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
     std::set<size_t> already_done;
     for (neam::r::reason & r : rsn)
     {
-      size_t ridx;
-      if (labels.count(r.type))
-      {
-        ridx = labels[r.type];
-      }
-      else
-      {
-        ridx = counter++;
-        labels[r.type] = ridx;
-        os << "  N" << ridx << " [shape=octagon;color=red;fontcolor=red;penwidth=3];\n";
-      }
-      if (!already_done.count(ridx))
-      {
-        already_done.emplace(ridx);
-        os << "  N" << idx << " -> N" << ridx << " ["
-           << "dir=none;"
-           << "color=red;"
-           << "style=dashed;"
-           << "penwidth=3.5;"
-           << "];\n";
-      }
+      idx = get_idx_for_introspect(root);
+      insignificant = false;
+      output_reason(os, idx, r);
+    }
+
+    if (root.get_failure_ratio())
+    {
+      if (trace_full_error_path)
+        error_factor += root.get_failure_ratio();
+      insignificant = false;
+      os << "  N" << idx << " [penwidth=3;color=\"#" << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(root.get_failure_ratio() * 150. + 105.f), 255ul) << std::dec <<"0000\";]";
     }
   }
 }
+
+void neam::r::callgraph_to_dot::output_reason(std::ostream &os, size_t idx, neam::r::reason &r)
+{
+  size_t ridx;
+  if (!reason_idxs.count(r))
+  {
+    ridx = counter++;
+    reason_idxs[r] = ridx;
+    os << "  N" << ridx << " [shape=octagon;color=red;fontcolor=red;penwidth=3]; // failure node\n";
+  }
+  else return; // already linked
+
+  os << "  N" << idx << " -> N" << ridx << " ["
+     << "label=\" x" << r.hit << "\";"
+     << "dir=none;"
+     << "color=red;"
+     << "fontcolor=red;"
+     << "style=dashed;"
+     << "penwidth=3.5;"
+     << "];\n";
+}
+
+size_t neam::r::callgraph_to_dot::get_idx_for_introspect(const neam::r::introspect &itr)
+{
+  if (!idxs.count(itr.get_name()))
+  {
+    size_t idx = counter++;
+    idxs[itr.get_name()] = idx;
+    introspect_labels.emplace(idx, itr);
+    introspect_labels.at(idx).remove_context();
+  }
+  return idxs[itr.get_name()];
+}
+
