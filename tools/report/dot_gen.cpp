@@ -37,7 +37,18 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
 
   for (auto &it : labels)
   {
-    os << "  N" << it.second << " [label=" << std::quoted(it.first) << ";";
+    // split the string
+    std::string str = it.first;
+    for (size_t i = 0, j = 0; i < str.size(); ++i, ++j)
+    {
+      if (j >= 20 && (std::isspace(str[i]) || str[i] == ':'))
+      {
+        j = 0;
+        str.insert(i, "\n");
+      }
+    }
+    // print the label for the node
+    os << "  N" << it.second << " [label=" << std::quoted(str) << ";";
     if (is_root[it.first])
       os << "shape=box;";
     os << "];\n";
@@ -68,7 +79,8 @@ void neam::r::callgraph_to_dot::walk_get_max(neam::r::introspect &root)
 {
   std::vector<neam::r::introspect> callees = root.get_callee_list();
 
-  max = std::max(max, float(root.get_call_count()));
+  max_count = std::max(max_count, float(root.get_call_count()));
+  max_self = std::max(max_self, float(root.get_average_self_duration()));
 
   for (neam::r::introspect &callee : callees)
     walk_get_max(callee);
@@ -104,12 +116,15 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
     std::pair<double, std::string> gbl_tm = get_time(callee.get_average_duration());
 
     // output the edge
+    float weight = std::max(float(callee.get_call_count()) / max_count * 2.5f, 0.5f);
+           weight += std::max(float(callee.get_average_self_duration()) / max_self * 2.5f, 0.5f);
+    weight = std::min(weight, 5.f);
     os << "  N" << idx << " -> N" << subidx << " ["
        << "label=\" " << callee.get_call_count() << "\\n"
                       << " self " << size_t(self_tm.first) << self_tm.second << "s\\n"
                       << " gbl " << size_t(gbl_tm.first) << gbl_tm.second << "s" << "\";"
-       << "weight=" << callee.get_call_count() << ";"
-       << "penwidth=" << std::max(float(callee.get_call_count()) / max * 4.f, 0.5f) << ";";
+//        << "weight=" << callee.get_call_count() << ";"
+       << "penwidth=" << weight << ";";
 
     if (callee.get_failure_ratio())
     {
