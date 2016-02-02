@@ -24,7 +24,15 @@ make
 tested with gcc 5.2.1 and clang 3.7.0
 All you need is a c++14 compiler, a c++14 STL, `sigaction()` (or `signal()`) and `time()` support in your OS
 
-### versus valgrind (memcheck, ca{che,ll}grind)
+### tool
+
+A `callgraph2dot` tool comes with reflective. It transform a reflective output file into a dot graph, adding to it some information from reflective (like the call count, self time, global time).
+`callgraph2dot` can perform some branch pruning to remove superfluous branches in the callgraph (this help doing performance analysis) and can also report errors and their path inside the callgraph.
+
+It's the only tool present for the moment, but this one is important as it allows a visual preview of the data stored on-disk by persistence.
+An interesting thing to note, this tool is entirely written without acceding to the internal API of reflective.
+
+### reflective versus valgrind (memcheck, ca{che,ll}grind)
 
 Reflective is faster, but can't do the same job: valgrind memcheck will track memory errors, a task that reflective can't do;
 cachegrind will profile the cache whereas reflective don't;
@@ -40,9 +48,9 @@ This information is also available at runtime, while the program is running.
 
 The user can also report custom errors or warnings, expanding the range of possibilities or reflective.
 
-### versus gprof
+### reflective versus gprof
 
-Reflective is a bit slower, but could load and save its data, expanding it at each time the program runs. It also saves a full callgraph and does not use statistical sampling.
+Reflective is a tiny bit slower, but could load and save its data, expanding it at each time the program runs. It also saves a full callgraph and does not use statistical sampling.
 Reflective also report errors, call count, average self/global times on instrumented functions and only monitor a limited set of functions.
 A program can also be used with reflective while being build in release mode, and the generated data is available for the program to use at runtime.
 
