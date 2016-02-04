@@ -1,11 +1,9 @@
 
-`reflective` (or `neam::r` ) is a program introspection library written in C++. ( **NOT** a language reflection framework, that would quite impossible in plain C++ only).
+`reflective` (or `neam::r` ) is a program introspection/profiling library written in C++. ( **NOT** a language reflection framework, that would quite impossible in plain C++ only).
 
-It can be used to create bug reports, monitor running programs across multiple runs, making self-introspecting programs, profiling, ...
+It can be used to create bug reports, monitor programs across multiple runs, making self-introspecting programs, profiling, ...
 
 ### note
-
-**reflective is not even in alpha stage and was started at most a week ago.**
 
 to setup the cloned repository:
 ```
@@ -23,6 +21,15 @@ make
 
 tested with gcc 5.2.1 and clang 3.7.0
 All you need is a c++14 compiler, a c++14 STL, `sigaction()` (or `signal()`) and `time()` support in your OS
+
+**important note**: because of the nature of constructors and destructors, it is really difficult to get correct graph when the call is done in a initializer list / default {de,con}structor.
+The call is attributed to the caller. (that could have weird effects on the graph when a function delete polymorphic objects and end-up being reported as calling different methods that in fact are called implicitly by destructors).
+If you can't do without a 100% correct callgraph (and mostly the fact that a call can be assigned to a caller instead of a {de,con}structor, well, use a slower tool).
+Currently reflective only uses the STL and some utilities that I've made (that only uses STL), and you can't get correct results on {de,con}structors with only that.
+I am working on a solution to fix this, but if it add too much complexity to reflective it may well never see daylight.
+
+I've run reflective with YägGLer (a weird renderer that I wrote) in a multi-threaded, CPU intensive program, and there was no framerate drop (moreover the scheduler wasn't late to finish a frame).
+
 
 ### tool
 
@@ -50,80 +57,19 @@ This information is also available at runtime, while the program is running.
 
 The user can also report custom errors or warnings, expanding the range of possibilities or reflective.
 
-### reflective versus gprof
+### reflective versus gprof / oprofile
 
-Reflective is a tiny bit slower, but could load and save its data, expanding it at each time the program runs. It also saves a full callgraph and does not use statistical sampling.
-Reflective also report errors, call count, average self/global times on instrumented functions and only monitor a limited set of functions.
+Reflective may be a tiny bit slower, but could load and save its data, expanding it at each time the program runs. It also saves a full callgraph and does not use statistical sampling.
+Reflective also report errors, call count, average self/global times on instrumented functions and can only monitor a limited set of functions.
 A program can also be used with reflective while being build in release mode, and the generated data is available for the program to use at runtime.
 
-### code examples
-
-```c++
-#include <reflective/reflective.hpp>
-
-namespace a
-{
-  class b
-  {
-    public:
-      void g();
-
-      void f()
-      {
-        // this line is what makes reflective working
-        neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(a::b::f));
-        // NOTE: you should always provide the whole path to the function, like `a::b::f`
-
-        g();
-      }
-  };
-} // namespace a
-```
-
-```c++
-#include <vector>
-#include <reflective/reflective.hpp>
-
-void f()
-{
-  // create the introspect object, used for introspecting functions and methods
-  neam::r::introspect itp("a::b::f");
-  // could as well be `neam::r::introspect(N_FUNCTION(a::b::f))` which is faster
-  // (but less flexible as the definition of a::b::f is needed)
-
-  // get the time consumed by the function (less the time consumed by the functions it calls)
-  itp.get_average_self_duration();
-
-  // retrieve from the callgraph all the functions that call `a::b::f`
-  std::vector<neam::r::introspect> itp.get_caller_list();
-
-  // conditional execution based on the past failures
-  itp.if_wont_fail(N_FUNCTION(a::b::g))
-    .call() // call a::b::g() if it's OK
-    .otherwise([&]() // do something else if it's not.
-    {
-      my_safer_function();
-    });
-
-  // retrieve the last 100 failure reasons of `a::b::f`
-  // a failure reason (the `neam::r::reason` object) contain the failure type
-  //  (death by signal, syscall failure, file not found, exception, ...),
-  // the file and line where the error has occurred, a message, the number of
-  // consecutive time the error has been raised and the timestamp range.
-  // the list of failure is guaranteed to be strictly ordered in time
-  // (no timestamp range can overlap).
-  std::vector<neam::r::reason> failure_reasons = itp.get_failure_reasons(100);
-}
-
-```
 
 ### future / TODO
 
-- create tools to read and output data/information from reflective save file
+- create more tools to read and output data/information from reflective save file
+- add warning and info level reports (like there is "fail" level reports)
 - add introspection abilities for monitoring regression on duration times
 - add conditional execution based on the average duration time.
-- fix the lambda support
-- fix the multi-threading support (add mutexes)
 - benchmark the impact on the worst case of reflective (calling repetitively one empty function and calling a lot of different empty functions)
 
 ### author
