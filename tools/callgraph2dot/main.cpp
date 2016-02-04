@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   else if (vm.count("no-failure-reason-full-trace"))
     ctd.include_failure_reasons(true, false);
   else
-    ctd.include_failure_reasons(true);
+    ctd.include_failure_reasons(true, true);
 
   // output the dot file
   if (output_file != "-")

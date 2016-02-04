@@ -79,7 +79,7 @@ endif()
 
 # build the tools
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  add_subdirectory(tools/callgraph2dot)
+  add_subdirectory(tools)
 endif()
 
 # copy

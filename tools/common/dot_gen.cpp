@@ -82,10 +82,11 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
     }
 
     // Append the info string (if any)
-    if (it.second.get_info_string())
+    if (it.second.get_file())
     {
       str += "\n";
-      str += it.second.get_info_string();
+      str += it.second.get_file();
+      str += " : " + std::to_string(it.second.get_line());
     }
 
     // print the label for the node
@@ -95,7 +96,7 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
     os << "];\n";
   }
 
-  os << "}\n";
+  os << "}" << std::endl;
 
   return true;
 }
@@ -135,7 +136,7 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
 {
   error_factor = 0.f;
   std::string name = root.get_name();
-  size_t idx;
+  size_t idx = 0;
 
   // output the callgraph
   std::vector<neam::r::introspect> callees = root.get_callee_list();
@@ -190,22 +191,40 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
   // output some fail reasons
   if (out_error)
   {
-    std::vector<neam::r::reason> rsn = root.get_failure_reasons(10);
-    std::set<size_t> already_done;
-    for (neam::r::reason & r : rsn)
+    std::vector<neam::r::reason> rsn = root.get_failure_reasons(100);
+
+    if (rsn.empty())
+      return;
+
+    idx = get_idx_for_introspect(root);
+
+    if (introspect_errors.count(idx))
+      return;
+    introspect_errors.emplace(idx);
+
+    // prepare the vector (uniquify it)
+    std::unordered_map<neam::r::reason, neam::r::reason, internal::reason_hasher> rsn_map;
+    for (neam::r::reason &r : rsn)
     {
-      idx = get_idx_for_introspect(root);
-      insignificant = false;
-      output_reason(os, idx, r);
+      if (rsn_map.count(r))
+        rsn_map[r].hit += r.hit;
+      else
+        rsn_map[r] = r;
     }
+
+    for (auto & r : rsn_map)
+      output_reason(os, idx, r.second);
 
     if (root.get_failure_ratio())
     {
       if (trace_full_error_path)
         error_factor += root.get_failure_ratio();
       insignificant = false;
-      os << "  N" << idx << " [penwidth=3;color=\"#" << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(root.get_failure_ratio() * 150. + 105.f), 255ul) << std::dec <<"0000\";]";
     }
+
+    // update the box of the function
+    os << "  N" << idx << " [penwidth=3;color=\"#"
+       << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(root.copy_without_context().get_failure_ratio() * 150. + 105.f), 255ul) << std::dec << "0000\";]\n";
   }
 }
 
@@ -216,9 +235,9 @@ void neam::r::callgraph_to_dot::output_reason(std::ostream &os, size_t idx, neam
   {
     ridx = counter++;
     reason_idxs[r] = ridx;
-    os << "  N" << ridx << " [shape=octagon;color=red;fontcolor=red;penwidth=3]; // failure node\n";
+    os << "  N" << ridx << " [shape=octagon;color=red;fontcolor=red;penwidth=3]; // failure node " << reason_idxs[r] << "\n";
   }
-  else return; // already linked
+  else ridx = reason_idxs[r];//return; // already linked
 
   os << "  N" << idx << " -> N" << ridx << " ["
      << "label=\" x" << r.hit << "\";"
@@ -230,15 +249,20 @@ void neam::r::callgraph_to_dot::output_reason(std::ostream &os, size_t idx, neam
      << "];\n";
 }
 
-size_t neam::r::callgraph_to_dot::get_idx_for_introspect(const neam::r::introspect &itr)
+size_t neam::r::callgraph_to_dot::get_idx_for_introspect(const neam::r::introspect &itr, bool *added)
 {
-  if (!idxs.count(itr.get_name()))
+  if (!idxs.count(itr.get_function_descriptor().key_name))
   {
     size_t idx = counter++;
-    idxs[itr.get_name()] = idx;
+    idxs[itr.get_function_descriptor().key_name] = idx;
     introspect_labels.emplace(idx, itr);
     introspect_labels.at(idx).remove_context();
+    if (added)
+      *added = true;
   }
-  return idxs[itr.get_name()];
+  else if (added)
+    *added = false;
+
+  return idxs[itr.get_function_descriptor().key_name];
 }
 

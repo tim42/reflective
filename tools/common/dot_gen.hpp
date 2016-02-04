@@ -28,11 +28,30 @@
 
 #include <ostream>
 #include <map>
+#include <set>
+#include <unordered_map>
 #include <reflective/introspect.hpp>
 namespace neam
 {
   namespace r
   {
+    namespace internal
+    {
+      struct reason_hasher
+      {
+        typedef neam::r::reason argument_type;
+        typedef std::size_t result_type;
+        result_type operator()(const neam::r::reason &r) const
+        {
+          result_type const h1(std::hash<std::string>()(r.type));
+          result_type const h2(std::hash<std::string>()(r.file));
+          result_type const h3(std::hash<std::string>()(r.message));
+          result_type const h4(std::hash<size_t>()(r.line));
+          return h1 ^ (h2 << 1) ^ (h3 << 2) ^ (h4 << 3);
+        }
+      };
+    } // namespace internal
+
     class callgraph_to_dot
     {
       public:
@@ -78,12 +97,13 @@ namespace neam
         void walk_root(std::ostream &os, neam::r::introspect &root, float &error_factor, bool &insignificant);
         void walk_get_max(neam::r::introspect &root);
         void output_reason(std::ostream &os, size_t idx, neam::r::reason &r);
-        size_t get_idx_for_introspect(const neam::r::introspect &itr);
+        size_t get_idx_for_introspect(const neam::r::introspect &itr, bool *added = nullptr);
 
       private:
         std::map<std::string, size_t> idxs;
-        std::map<neam::r::reason, size_t> reason_idxs;
+        std::unordered_map<neam::r::reason, size_t, internal::reason_hasher> reason_idxs;
         std::map<size_t, neam::r::introspect> introspect_labels;
+        std::set<size_t> introspect_errors; // introspect whose errors has been output
         float max_count = 1.f;
         float max_self = 0.000001f;
         size_t max_self_count = 0;
