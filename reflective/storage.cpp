@@ -10,6 +10,8 @@
 static neam::r::internal::data *global_ptr = nullptr;
 static thread_local neam::r::internal::thread_local_data *tl_ptr = nullptr;
 
+static neam::r::internal::mutex_type internal_lock;
+
 neam::r::internal::thread_local_data *neam::r::internal::get_thread_data()
 {
   if (!tl_ptr)
@@ -19,21 +21,21 @@ neam::r::internal::thread_local_data *neam::r::internal::get_thread_data()
 
 neam::r::internal::data *neam::r::internal::get_global_data()
 {
-  if (!global_ptr)
+  if (!global_ptr) // don't lock at each time
   {
-    load_data_from_disk(conf::out_file);
+    std::lock_guard<neam::r::internal::mutex_type> _u0(internal_lock);
     if (!global_ptr)
-      global_ptr = new data;
+    {
+      load_data_from_disk(conf::out_file);
+      if (!global_ptr)
+        global_ptr = new data;
+    }
   }
   return global_ptr;
 }
 
-static inline bool call_info_cmp(uint32_t hash, const char *const name, neam::r::internal::call_info_struct &info)
-{
-  return ((!hash || info.name_hash == hash) && (((hash & 0x1) == 0 && hash) || name == info.name || !strcmp(name, info.name)));
-}
 
-neam::r::internal::call_info_struct &neam::r::internal::_get_call_info_struct(uint32_t hash, const char *const name, const char *const pretty_name, long &index)
+neam::r::internal::call_info_struct &neam::r::internal::_get_call_info_struct(const func_descriptor &d, long &index)
 {
   data *global = get_global_data(); // call info structs are located in the global thread
 
@@ -45,25 +47,41 @@ neam::r::internal::call_info_struct &neam::r::internal::_get_call_info_struct(ui
   {
     // doing everything to call as least as possible strcmp...
     // NOTE: the first bit tells if the hash comes from a string (in that case we have to strcmp) or from a pointer
-    if (call_info_cmp(hash, name, it))
+    if (d == it.descr)
     {
-      // set the pretty name if not already present
-      if (!it.pretty_name && pretty_name)
-        it.pretty_name = pretty_name;
+      // set properties if not already present
+      if (!it.descr.pretty_name && d.pretty_name)
+        it.descr.pretty_name = d.pretty_name;
+      if (!it.descr.name && d.name)
+        it.descr.pretty_name = d.pretty_name;
+      if (!it.descr.file && d.file)
+      {
+        it.descr.file = d.file;
+        it.descr.line = d.line;
+      }
+      if (!it.descr.key_hash && d.key_hash)
+        it.descr.key_hash = d.key_hash;
+      if (!it.descr.key_name && d.key_name)
+        it.descr.key_hash = d.key_hash;
       // done !
       return it;
     }
     ++index;
   }
 
+  // before creating it, check that the descriptor is a valid one
+  if (!d.key_name && (!d.key_hash || ((d.key_hash & 0x01) != 0)))
+    throw std::runtime_error("reflective: invalid func_descriptor structure when registering a new call_info_struct: no key_name or no unique key_hash");
+
   // nothing found: create it
   index = global->func_info.size();
-  global->func_info.emplace_back(call_info_struct{name, hash, pretty_name});
+  global->func_info.emplace_back(call_info_struct{d});
+  neam::r::internal::call_info_struct &ret = global->func_info.back();
 
-  return global->func_info.back();
+  return ret;
 }
 
-neam::r::internal::call_info_struct *neam::r::internal::_get_call_info_struct_search_only(uint32_t hash, const char *const name, const char *const pretty_name, long int &index)
+neam::r::internal::call_info_struct *neam::r::internal::_get_call_info_struct_search_only(const func_descriptor &d, long int &index)
 {
   data *global = get_global_data(); // call info structs are located in the global thread
 
@@ -75,11 +93,22 @@ neam::r::internal::call_info_struct *neam::r::internal::_get_call_info_struct_se
   {
     // doing everything to call as least as possible strcmp...
     // NOTE: the first bit tells if the hash comes from a string (in that case we have to strcmp) or from a pointer
-    if (call_info_cmp(hash, name, it))
+    if (d == it.descr)
     {
-      // set the pretty name if not already present
-      if (!it.pretty_name && pretty_name)
-        it.pretty_name = pretty_name;
+      // set properties if not already present
+      if (!it.descr.pretty_name && d.pretty_name)
+        it.descr.pretty_name = d.pretty_name;
+      if (!it.descr.name && d.name)
+        it.descr.pretty_name = d.pretty_name;
+      if (!it.descr.file && d.file)
+      {
+        it.descr.file = d.file;
+        it.descr.line = d.line;
+      }
+      if (!it.descr.key_hash && d.key_hash)
+        it.descr.key_hash = d.key_hash;
+      if (!it.descr.key_name && d.key_name)
+        it.descr.key_hash = d.key_hash;
       // done !
       return &it;
     }
@@ -103,6 +132,7 @@ neam::r::internal::call_info_struct &neam::r::internal::get_call_info_struct_at_
 
 void neam::r::sync_data_to_disk(const std::string &file)
 {
+  std::lock_guard<neam::r::internal::mutex_type> _u0(internal_lock);
   neam::cr::raw_data serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::neam>(global_ptr);
 
   std::ofstream of(file);

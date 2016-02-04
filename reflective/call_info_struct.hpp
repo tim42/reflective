@@ -27,8 +27,10 @@
 # define __N_54570708560285988_386345818__CALL_STRUCT_HPP__
 
 #include <cstdint>
-#include <tools/ct_string.hpp>
+
 #include "reason.hpp"
+#include "func_descriptor.hpp"
+#include "type.hpp"
 
 namespace neam
 {
@@ -39,11 +41,7 @@ namespace neam
       /// \brief Hold some information about a called function
       struct call_info_struct
       {
-        const char *name; ///< \brief Have to be set, this way, we can test which call_info_struct is linked to which function_call_t
-        uint32_t name_hash; ///< \brief Used to have a faster strcmp() on name
-
-        const char *pretty_name = nullptr; ///< \brief Optional, mostly used to pretty print the name.
-        const char *info = nullptr; ///< \brief Optional, used to get file and line information
+        func_descriptor descr; ///< \brief The function descriptor object
 
         // ----- //
 

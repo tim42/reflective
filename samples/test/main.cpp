@@ -20,7 +20,7 @@ class s
       for (volatile size_t k = 0; k < 100000; ++k);
 
       if (rand() % 50 < 3)
-        self_call.fail(neam::r::lazy_programmer_reason(N_REASON_INFO, "can't touch this"));
+        self_call.fail(neam::r::lazy_programmer_reason(N_REASON_INFO, "[can't touch this]"));
     }
 
     void f()
@@ -30,9 +30,16 @@ class s
       // randomly make the prog segfault
       if (rand() % 100000 < 10)
       {
-        neam::cr::out.warning() << LOGGER_INFO << "random segfault spotted !" << std::endl;
-        volatile int *ptr = nullptr;
-        *ptr = 0;
+        neam::cr::out.warning() << LOGGER_INFO << "random crash spotted !" << std::endl;
+        if (rand() % 2)
+        {
+          volatile int *ptr = nullptr;
+          *ptr = 0;
+        }
+        else
+        {
+          abort();
+        }
       }
     }
 };
@@ -45,7 +52,7 @@ void fnc()
 
   s lol;
 
-  self_call.if_wont_fail(N_FUNCTION_INFO(s::d))
+  self_call.if_wont_fail("s::d", &s::d)
       .call(&lol)
       .otherwise([&]()
       {

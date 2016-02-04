@@ -36,21 +36,21 @@ namespace neam
     namespace internal
     {
       /// \brief Internal helper struct, used only by if_wont_fail
-      template<typename FuncType, FuncType Func> struct _func_call // Default
+      template<typename FuncType> struct _func_call // Default
       {
         template<typename... Args>
-         auto _call(Args... args) { return Func(std::forward<Args>(args)...); }
+         auto _call(FuncType func, Args... args) { return func(std::forward<Args>(args)...); }
       };
 
       void report_exception(std::exception &e);
       void report_unknown_exception();
 
       /// \brief A nice class to condionally call function based on the failure rate
-      template<typename FuncType, FuncType Func>
-      class if_wont_fail : public _func_call<FuncType, Func>
+      template<typename FuncType>
+      class if_wont_fail : public _func_call<FuncType>
       {
         public:
-          if_wont_fail(size_t _count, float _ratio) : count(_count), ratio(_ratio) {}
+          if_wont_fail(size_t _count, float _ratio, FuncType _func) : count(_count), ratio(_ratio), func(_func) {}
 
           /// \brief Change the minimum ratio
           if_wont_fail &set_max_ratio(float _max_ratio) { max_ratio = _max_ratio; return *this; }
@@ -75,7 +75,7 @@ namespace neam
           if_wont_fail &call(Args... args)
           {
             if (is_ok())
-              this->_call(std::forward<Args>(args)...);
+              this->_call(func, std::forward<Args>(args)...);
             return *this;
           }
 
@@ -147,53 +147,44 @@ namespace neam
         private:
           size_t count;
           float ratio;
+          FuncType func;
           size_t min_count = 100;
           float max_ratio = 0.5f;
       };
 
       // _func_call specialisations
-      template<typename Class, typename... Args, typename Ret, Ret (Class::*Func)(Args...)>
-      struct _func_call<Ret (Class::*)(Args...), Func>
+      template<typename Class, typename... Args, typename Ret>
+      struct _func_call<Ret (Class::*)(Args...)>
       {
-        static Ret _call(Class *ths, Args... args)
+        static Ret _call(Ret (Class::*func)(Args...), Class *ths, Args... args)
         {
-          return (ths->*Func)(std::forward<Args>(args)...);
+          return (ths->*func)(std::forward<Args>(args)...);
         }
       };
-      template<typename Class, typename... Args, typename Ret, Ret (Class::*Func)(Args...)const>
-      struct _func_call<Ret (Class::*)(Args...)const, Func>
+      template<typename Class, typename... Args, typename Ret>
+      struct _func_call<Ret (Class::*)(Args...)const>
       {
-        static Ret _call(Class *ths, Args... args)
+        static Ret _call(Ret (Class::*func)(Args...)const, Class *ths, Args... args)
         {
-          return ths->*Func(std::forward<Args>(args)...);
+          return ths->*func(std::forward<Args>(args)...);
         }
       };
-      template<typename Class, typename... Args, typename Ret, Ret (Class::*Func)(Args...)volatile>
-      struct _func_call<Ret (Class::*)(Args...)volatile, Func>
+      template<typename Class, typename... Args, typename Ret>
+      struct _func_call<Ret (Class::*)(Args...)volatile>
       {
-        static Ret _call(Class *ths, Args... args)
+        static Ret _call(Ret (Class::*func)(Args...)volatile, Class *ths, Args... args)
         {
-          return ths->*Func(std::forward<Args>(args)...);
+          return ths->*func(std::forward<Args>(args)...);
         }
       };
-      template<typename Class, typename... Args, typename Ret, Ret (Class::*Func)(Args...)const volatile>
-      struct _func_call<Ret (Class::*)(Args...)const volatile, Func>
+      template<typename Class, typename... Args, typename Ret>
+      struct _func_call<Ret (Class::*)(Args...)const volatile>
       {
-        Ret _call(Class *ths, Args... args)
+        Ret _call(Ret (Class::*func)(Args...)const volatile, Class *ths, Args... args)
         {
-          return ths->*Func(std::forward<Args>(args)...);
+          return ths->*func(std::forward<Args>(args)...);
         }
       };
-      template<typename... Args, typename Ret, Ret (*Func)(Args...)>
-      struct _func_call<Ret (*)(Args...), Func>
-      {
-        static Ret _call(Args... args)
-        {
-          return Func(std::forward<Args>(args)...);
-        }
-      };
-
-
     } // namespace internal
   } // namespace r
 } // namespace neam

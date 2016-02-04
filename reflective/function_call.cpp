@@ -5,7 +5,10 @@
 
 void neam::r::function_call::common_init()
 {
-  ++call_info.call_count; // TODO: a more threadsafe thing
+  {
+    std::lock_guard<internal::mutex_type> _u0(global->lock);
+    ++call_info.call_count;
+  }
 
   prev = tl_data->top;
   se = nullptr;
@@ -21,7 +24,6 @@ void neam::r::function_call::common_init()
     se = &internal::stack_entry::initial_get_stack_entry(call_info_index);
 
   tl_data->top = this;
-
 }
 
 neam::r::function_call::~function_call()
@@ -31,8 +33,12 @@ neam::r::function_call::~function_call()
   if (self_time_monitoring)
   {
     const double delta = self_chrono.get_accumulated_time();
-    call_info.average_self_time = (call_info.average_self_time * call_info.average_self_time_count + delta) / (call_info.average_self_time_count + 1.);
-    ++call_info.average_self_time_count;
+    {
+      std::lock_guard<internal::mutex_type> _u0(global->lock);
+
+      call_info.average_self_time = (call_info.average_self_time * call_info.average_self_time_count + delta) / (call_info.average_self_time_count + 1.);
+      ++call_info.average_self_time_count;
+    }
     if (se)
     {
       se->average_self_time = (se->average_self_time * se->average_self_time_count + delta) / (se->average_self_time_count + 1.);
@@ -42,8 +48,12 @@ neam::r::function_call::~function_call()
   if (global_time_monitoring)
   {
     const double delta = global_chrono.get_accumulated_time();
-    call_info.average_global_time = (call_info.average_global_time * call_info.average_global_time_count + delta) / (call_info.average_global_time_count + 1.);
-    ++call_info.average_global_time_count;
+    {
+      std::lock_guard<internal::mutex_type> _u0(global->lock);
+
+      call_info.average_global_time = (call_info.average_global_time * call_info.average_global_time_count + delta) / (call_info.average_global_time_count + 1.);
+      ++call_info.average_global_time_count;
+    }
     if (se)
     {
       se->average_global_time = (se->average_global_time * se->average_global_time_count + delta) / (se->average_global_time_count + 1.);
@@ -59,13 +69,12 @@ neam::r::function_call::~function_call()
 
   tl_data->top = prev;
 
-  if (!prev && !conf::disable_auto_save) // TODO: conf for a real name
+  if (!prev && !conf::disable_auto_save)
     neam::r::sync_data_to_disk(conf::out_file); // there's nothing after us, sync data to a file
 }
 
 void neam::r::function_call::fail(const neam::r::reason &rsn)
 {
-  call_info.fail_count++; // TODO: a more threadsafe thing
 
   if (se)
     se->fail_count++;
@@ -73,13 +82,18 @@ void neam::r::function_call::fail(const neam::r::reason &rsn)
   // Avoid huge reports if we always hit the same error
   // We don't test the whole array 'cause we want to keep the ordering
   size_t ts = std::time(nullptr);
-  if (call_info.fails.size() && call_info.fails.back() == rsn)
   {
-    ++call_info.fails.back().hit;
-    call_info.fails.back().last_timestamp = ts;
+    std::lock_guard<internal::mutex_type> _u0(global->lock);
+
+    call_info.fail_count++;
+    if (call_info.fails.size() && call_info.fails.back() == rsn)
+    {
+      ++call_info.fails.back().hit;
+      call_info.fails.back().last_timestamp = ts;
+    }
+    else
+      call_info.fails.push_back(neam::r::reason {rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
   }
-  else
-    call_info.fails.push_back(neam::r::reason{rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
 }
 
 neam::r::introspect neam::r::function_call::get_introspect() const

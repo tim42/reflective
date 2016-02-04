@@ -71,15 +71,6 @@ namespace neam
       {
         return !(*this == o);
       }
-
-      /// \brief < operator (for std::map, ...)
-      constexpr bool operator < (const reason &o) const
-      {
-        return o.line < this->line
-               || (!!o.file < !!this->file) || strcmp(o.file ? o.file : "", this->file ? this->file : "") < 0
-               || (!!o.message < !!this->message) || strcmp(o.message ? o.message : "", this->message ? this->message : "") < 0
-               || (!!o.type < !!this->type) || strcmp(o.type ? o.type : "", this->type ? this->type : "") < 0;
-      }
     };
 
 /// \brief To be used to fill the operator() automatically
@@ -104,6 +95,7 @@ namespace neam
     static constexpr reason abort_reason = reason {"SIGABRT"};
     static constexpr reason floating_point_exception_reason = reason {"SIGFPE"};
     static constexpr reason illegal_instruction_reason = reason {"SIGILL"};
+    static constexpr reason keyboard_interrupt_reason = reason {"SIGINT"};
     static constexpr reason unknown_signal_reason = reason {"unknown signal"};
 
     static constexpr reason unknown_reason = reason {"unknown cause"};

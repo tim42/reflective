@@ -29,6 +29,7 @@
 #include <persistence/persistence.hpp>
 
 #include "reason.hpp"
+#include "func_descriptor.hpp"
 #include "call_info_struct.hpp"
 #include "stack_entry.hpp"
 #include "storage.hpp"
@@ -85,11 +86,30 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::internal::data, callgraph, names::r__data::callgraph)
     > {};
 
+    // // func_descriptor // //
+    NCRP_DECLARE_NAME(r__func_descriptor, key_name);
+    NCRP_DECLARE_NAME(r__func_descriptor, key_hash);
+    NCRP_DECLARE_NAME(r__func_descriptor, name);
+    NCRP_DECLARE_NAME(r__func_descriptor, pretty_name);
+    NCRP_DECLARE_NAME(r__func_descriptor, file);
+    NCRP_DECLARE_NAME(r__func_descriptor, line);
+    template<typename Backend> class persistence::serializable<Backend, r::func_descriptor> : public persistence::serializable_object
+    <
+      Backend, // < the backend (here: all backends)
+
+      r::func_descriptor, // < the class type to handle
+
+      // simply list here the members you want to serialize / deserialize
+      NCRP_NAMED_TYPED_OFFSET(r::func_descriptor, key_name, names::r__func_descriptor::key_name),
+      NCRP_NAMED_TYPED_OFFSET(r::func_descriptor, key_hash, names::r__func_descriptor::key_hash),
+      NCRP_NAMED_TYPED_OFFSET(r::func_descriptor, name, names::r__func_descriptor::name),
+      NCRP_NAMED_TYPED_OFFSET(r::func_descriptor, pretty_name, names::r__func_descriptor::pretty_name),
+      NCRP_NAMED_TYPED_OFFSET(r::func_descriptor, file, names::r__func_descriptor::file),
+      NCRP_NAMED_TYPED_OFFSET(r::func_descriptor, line, names::r__func_descriptor::line)
+    > {};
+
     // // call_info_struct // //
-    NCRP_DECLARE_NAME(r__call_info_struct, name);
-    NCRP_DECLARE_NAME(r__call_info_struct, name_hash);
-    NCRP_DECLARE_NAME(r__call_info_struct, pretty_name);
-    NCRP_DECLARE_NAME(r__call_info_struct, info);
+    NCRP_DECLARE_NAME(r__call_info_struct, descr);
     NCRP_DECLARE_NAME(r__call_info_struct, call_count);
     NCRP_DECLARE_NAME(r__call_info_struct, fail_count);
     NCRP_DECLARE_NAME(r__call_info_struct, average_self_time);
@@ -104,10 +124,7 @@ namespace neam
       r::internal::call_info_struct, // < the class type to handle
 
       // simply list here the members you want to serialize / deserialize
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, name, names::r__call_info_struct::name),
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, name_hash, names::r__call_info_struct::name_hash),
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, pretty_name, names::r__call_info_struct::pretty_name),
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, info, names::r__call_info_struct::info),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, descr, names::r__call_info_struct::descr),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, fail_count, names::r__call_info_struct::fail_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, call_count, names::r__call_info_struct::call_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_self_time, names::r__call_info_struct::average_self_time),

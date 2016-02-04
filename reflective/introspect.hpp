@@ -58,34 +58,32 @@ namespace neam
       public:
         /// \brief Construct a function call object
         /// \see N_FUNCTION_INFO
-        /// \code neam::r::introspect info(N_FUNCTION_INFO(my_class::my_function)); \endcode
+        /// \code neam::r::introspect info(N_FUNCTION_INFO(my_function)); \endcode
         /// \throw std::runtime_error if the function is not found
         template<typename FuncType, FuncType Func>
-        introspect(const char *const name, uint32_t hash, neam::embed::embed<FuncType, Func>)
-          : call_info_index(0), call_info(internal::get_call_info_struct<FuncType, Func>(hash, name, nullptr, &call_info_index, true)),
+        introspect(const func_descriptor &d, neam::embed::embed<FuncType, Func>)
+          : call_info_index(0), call_info(internal::get_call_info_struct<FuncType, Func>(d, &call_info_index, true)),
             global(internal::get_global_data())
         {
         }
 
-        /// \brief Construct a function call object for a lambda
-        /// \note lambda are slower than normal functions 'cause the hash is computed at runtime and this needs RTTI (but it have a cache for call_info_index results)
-        /// \see N_LAMBDA_INFO
-        /// \code neam::r::introspect info((N_PRETTY_LAMBDA_INFO(my_lbd_variable)); \endcode
+        /// \brief Construct a function call object for a [?]
+        /// \note this is "slower" than normal functions 'cause the hash is computed at runtime (but it have a cache for call_info_index results)
         /// \throw std::runtime_error if the function is not found
         template<typename FuncType>
-        introspect(const char *const name, uint32_t hash, internal::type<FuncType>)
-          : call_info_index(0), call_info(internal::get_call_info_struct<FuncType>(hash, name, nullptr, &call_info_index, true)),
+        introspect(const func_descriptor &d, internal::type<FuncType>)
+          : call_info_index(0), call_info(internal::get_call_info_struct<FuncType>(d, &call_info_index, true)),
             global(internal::get_global_data())
         {
         }
 
         /// \brief Allow you to query at runtime arbitrary functions or methods
-        /// \note don't specify the hash parameter if you don't know what this is (a std::runtime_error will be thrown if it's a bad hash)
+        /// \note This is the \b ONLY recommended constructor: the other are \b NOT guaranteed to work as they can rely on information unavailable in the current context for the user
         /// \note this is slower (no hash computed (a slower search is done), no cache), but this allows more possibilities
         /// \param[in] name The name of the function plus all the namespaces encapsulating it (like: "neam::r::introspect::common_init")
         /// \throw std::runtime_error if the function is not found
         /// \note that create a context-free introspect object (that can be latter contextualized)
-        explicit introspect(const char *const name, uint32_t hash = 0) : introspect(name, hash, internal::type<void>()) {}
+        explicit introspect(const char *const name) : introspect(func_descriptor {name}, internal::type<void>()) {}
 
         /// \brief Copy constructor (no move constructor, 'cause it wouldn't improve anything)
         introspect(const introspect &o);
@@ -130,6 +128,12 @@ namespace neam
           context = nullptr;
         }
 
+        /// \brief Return a copy without the context
+        introspect copy_without_context() const
+        {
+          return introspect(call_info, call_info_index, nullptr);
+        }
+
         /// \brief Set the context for this introspect object
         /// \param[in] caller MUST be a caller (as returned by get_caller_list()) and it MUST be contextualized.
         /// \return true if it's OK, false otherwise
@@ -159,25 +163,47 @@ namespace neam
         /// DO NOT DELETE / FREE the returned pointer
         const char *get_pretty_name() const
         {
-          if (call_info.pretty_name)
-            return call_info.pretty_name;
-          return call_info.name;
+          if (call_info.descr.pretty_name)
+            return call_info.descr.pretty_name;
+          return call_info.descr.name;
         }
 
-        /// \brief Return the information string
+        /// \brief Return the file
+        /// \see get_line()
         /// \note could be nullptr if nothing is stored
         /// DO NOT DELETE / FREE the returned pointer
-        const char *get_info_string() const
+        const char *get_file() const
         {
-          return call_info.info;
+          return call_info.descr.file;
+        }
+        /// \brief Return the line
+        /// \see get_file()
+        size_t get_line() const
+        {
+          return call_info.descr.line;
         }
 
-        /// \brief Return the VERY-NOT-pretty name
+        /// \brief Return the user-defined name (short-hand name)
         /// DO NOT DELETE / FREE the returned pointer
         /// \see get_pretty_name()
+        /// \see set_name()
         const char *get_name() const
         {
-          return call_info.name;
+          return call_info.descr.name;
+        }
+
+        /// \brief Set the shorthand name
+        /// \note please don't touch the pointer after
+        /// \note avoid using too much heap-allocated strings
+        void set_name(const char *name)
+        {
+          call_info.descr.name = name;
+        }
+
+        /// \brief Return the function descriptor of the function. You could copy it but NEVER, NEVER change it.
+        const func_descriptor &get_function_descriptor() const
+        {
+          return call_info.descr;
         }
 
         /// \brief Return the probability of a incoming failure
@@ -213,17 +239,14 @@ namespace neam
 
         /// \brief This function tests if the given function will be likely to fail (fail ratio > 0.5 by default) and returns an object with some properties
         /// to do some kind of conditional execution based on fails
-        /// \note It takes a N_FUNCTION_INFO(your_function_here) as parameter. Do not intend to fill those parameters by yourself
         /// \note It use a get_failure_ratio() -like way to compute the failure rate (contextualized with the current stack, if any)
         /// \note It has a training time, it will return true until a certain amount of call has been reached. This amount can be set the with returned object.
         /// \note You can change the maximum ratio by setting it in the returned object.
-        /// \see if_wont_fail_global()
-        /// \todo Add support for lambdas
-        template<typename FuncType, FuncType Func>
-        internal::if_wont_fail<FuncType, Func> if_wont_fail(const char *const name, uint32_t hash, neam::embed::embed<FuncType, Func>) const
+        template<typename FuncType>
+        internal::if_wont_fail<FuncType> if_wont_fail(const char *const name, FuncType func) const
         {
           size_t o_call_info_index;
-          internal::call_info_struct &o_call_info = internal::get_call_info_struct<FuncType, Func>(hash, name, nullptr, &o_call_info_index);
+          internal::call_info_struct &o_call_info = internal::get_call_info_struct<void>(func_descriptor {name}, &o_call_info_index);
           internal::stack_entry *o_context = nullptr;
           if (context)
             o_context = context->get_children_stack_entry(o_call_info_index);
@@ -235,7 +258,7 @@ namespace neam
           float ratio = child.get_failure_ratio();
           size_t count = child.get_call_count();
 
-          return internal::if_wont_fail<FuncType, Func>(count, ratio);
+          return internal::if_wont_fail<FuncType>(count, ratio, func);
         }
 
       private:

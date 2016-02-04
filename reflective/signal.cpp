@@ -28,7 +28,7 @@ void neam::r::on_signal(int sig)
         fc->fail(illegal_instruction_reason(N_REASON_INFO, "illegal instruction"));
         break;
       case SIGINT:
-        fc->fail(illegal_instruction_reason(N_REASON_INFO, "keyboard interrupt (well, that's not an error)"));
+        fc->fail(keyboard_interrupt_reason(N_REASON_INFO, "keyboard interrupt (well, that's not an error)"));
         break;
       default:
         fc->fail(unknown_signal_reason(N_REASON_INFO, "not a SIGSEGV, SIGABRT, SIGFPE, SIGINT, nor a SIGILL"));

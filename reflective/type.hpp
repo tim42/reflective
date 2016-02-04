@@ -26,14 +26,22 @@
 #ifndef __N_865426894276070490_1131732371__TYPE_HPP__
 # define __N_865426894276070490_1131732371__TYPE_HPP__
 
+#include <mutex>
+
 namespace neam
 {
   namespace r
   {
     namespace internal
     {
+      /// \brief The type of mutex used by classes
+      using mutex_type = std::mutex;
+
       /// \brief only present for type deduction
       template<typename T> struct type { using t = T; };
+
+      /// \brief only present for having a cache
+      template<uint32_t Hash, size_t Line> struct file_type {};
     } // namespace internal
   } // namespace r
 } // namespace neam
