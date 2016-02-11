@@ -138,7 +138,25 @@ namespace neam
               line_content.push_back(*it);
             }
 
-            neam::cr::out.error() << LOGGER_INFO_TPL("[shell script]", line) << "expected " << arg4 << " got:" << neam::cr::newline
+            std::string info;
+            {
+              std::ostringstream os;
+              os << arg4;
+              std::string _info = os.str();
+              info.reserve(_info.size());
+              for (size_t i = 0; i < _info.size(); ++i)
+              {
+                switch (_info[i])
+                {
+                  case '\n': info += "\\n"; break;
+                  case '\t': info += "\\t"; break;
+                  case '\r': info += "\\r"; break;
+                  default: info.push_back(_info[i]);
+                }
+              }
+            }
+
+            neam::cr::out.error() << LOGGER_INFO_TPL("[shell script]", line) << "expected " << (info) << " got:" << neam::cr::newline
                                   << line_content << std::endl;
           }
         };
@@ -166,7 +184,7 @@ namespace neam
           comment %= '#' >> *(char_ - '\n');
           keyword %= qi::lit("function");// | qi::lit("if") | qi::lit("fi") | qi::lit("then") | qi::lit("elif") | qi::lit("else");
           white_space %= qi::lit(' ') | qi::lit('\t');
-          command_end %= qi::lit(';') | qi::lit('\n') | qi::lit("&&") | qi::lit("||");  // explicit termination characters
+          command_end %= qi::lit(';') | qi::lit('\n') | qi::lit("&&") | qi::lit("||") | qi::eoi;  // explicit termination characters
           escape_seq = qi::lit('\\') >
                 (
                     qi::lit('n') [_val = '\n']    // escape sequences
@@ -199,7 +217,7 @@ namespace neam
           bq_string = (qi::eps(qi::_a == phoenix::val(false)) >> qi::lit('`')[qi::_a = true] >> (+command_gen)[phoenix::at_c<0>(_val)=_1] >> *white_space >> qi::lit('`')[qi::_a = false])
                     | ("$(" > (+command_gen)[phoenix::at_c<0>(_val)=_1] >> *white_space > ')');                  // sub commands (back-quotes strings or $(...))
 
-          variable_id %= char_("a-zA-Z0-9_#-") >> *char_("a-zA-Z0-9_#-$");                          // matches a "legal" variable ID
+          variable_id %= char_("a-zA-Z0-9_#-") >> *char_("a-zA-Z0-9_#-");                           // matches a "legal" variable ID
 
           variable_expansion %= ("${" > (variable_id|variable_expansion) > '}') | ('$' >> !char_("{(") > variable_id); // matches $MY_VAR or ${MY_VAR} (variable expansion / substitution)
 

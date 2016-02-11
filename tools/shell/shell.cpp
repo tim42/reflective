@@ -5,6 +5,7 @@
 #include "shell.hpp"
 #include "exec.hpp"
 #include "debug.hpp"
+#include "flow_control.hpp"
 #include "parse_command.hpp"
 
 neam::r::shell::shell::shell()
@@ -16,9 +17,9 @@ neam::r::shell::shell::shell()
   register_base_builtins();
 }
 
-void neam::r::shell::shell::run(const std::string &commands)
+int neam::r::shell::shell::run(const std::__cxx11::string &commands)
 {
-  execute_no_context(commands);
+  return execute_no_context(commands);
 }
 
 int neam::r::shell::shell::execute_no_context(const std::string &commands)
@@ -40,7 +41,21 @@ int neam::r::shell::shell::run_cmd(const std::string &invocation_name, stream_pa
   {
     const command_list *cl = vstack.get_function(invocation_name);
     if (cl)
-      return exec::run(this, *cl);
+    {
+      try
+      {
+        return exec::run(this, *cl);
+      }
+      catch (return_flow_control &r)
+      {
+        return r.retval;
+      }
+      catch (flow_control &fc)
+      {
+        streamp[stream::stderr] << invocation_name << ": bad usage of " << fc.name << std::endl;
+        return 127;
+      }
+    }
   }
 
   // looks for builtins
@@ -197,16 +212,28 @@ void neam::r::shell::shell::builtin_echo()
 
 void neam::r::shell::shell::builtin_exit()
 {
-  builtin &blt = *new builtin([&](const std::string &, variable_stack &, stream_pack &, boost::program_options::variables_map &vm) -> int
+  builtin &blt = *new builtin([&](const std::string &name, variable_stack &vs, stream_pack &streamp, boost::program_options::variables_map &) -> int
   {
-    if (vm.count("value"))
-      exit(vm["value"].as<int>());
-    else
-      exit(0);
-    return 1;
+    int ret = 0;
+    const std::deque<std::string> &args = vs.get_argument_array();
+    if (args.size() > 2)
+    {
+      ret = 128;
+      streamp[stream::stderr] << name << ": too many arguments" << std::endl;
+    }
+    else if (args.size() == 2)
+    {
+      if (std::isdigit(args[1][0]))
+        ret = atoi(args[1].c_str());
+      else
+      {
+        streamp[stream::stderr] << name << ": numeric argument required" << std::endl;
+        ret = 128;
+      }
+    }
+    exit(ret);
   }, "exit the shell", "[exit value]");
-  blt.add_options() ("value", boost::program_options::value<int>()->default_value(0), "a builtin whose help should be printed");
-  blt.get_positional_options_description().add("value", 1);
+  blt.do_not_use_program_options();
   bltmgr.register_builtin("exit", blt);
 }
 
@@ -222,7 +249,30 @@ void neam::r::shell::shell::builtin_nothing()
 
 void neam::r::shell::shell::builtin_return()
 {
-  // TODO
+  builtin &blt = *new builtin([&](const std::string &name, variable_stack &vs, stream_pack &streamp, boost::program_options::variables_map &) -> int
+  {
+    int ret = 0;
+    const std::deque<std::string> &args = vs.get_argument_array();
+    if (args.size() > 2)
+    {
+      ret = 128;
+      streamp[stream::stderr] << name << ": too many arguments" << std::endl;
+    }
+    else if (args.size() == 2)
+    {
+      if (std::isdigit(args[1][0]))
+        ret = atoi(args[1].c_str());
+      else
+      {
+        streamp[stream::stderr] << name << ": numeric argument required" << std::endl;
+        ret = 128;
+      }
+    }
+    throw return_flow_control(ret);
+    return 0;
+  }, "return to the parent scope", "[return value]");
+  blt.do_not_use_program_options();
+  bltmgr.register_builtin("return", blt);
 }
 
 void neam::r::shell::shell::builtin_source()

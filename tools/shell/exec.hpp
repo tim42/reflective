@@ -29,6 +29,7 @@
 #include <sstream>
 #include "data_structure.hpp"
 #include "shell.hpp"
+#include "flow_control.hpp"
 
 namespace neam
 {
@@ -118,15 +119,25 @@ namespace neam
           }
           int operator()(const subshell &ss)
           {
-            sh->get_variable_stack().push_context(false, true);
+            raii_var_context(sh->get_variable_stack(), false, true);
+
             int last = 0;
             for (auto &c : ss.list)
               last = boost::apply_visitor(*this, c);
-            sh->get_variable_stack().pop_context();
             return last;
           }
           int operator()(const command &c)
           {
+            // we create a specific context for all that is related to pre-affectations (the context is cow but without args)
+            raii_var_context _u0;
+            if (c.affectations.size())
+            {
+              sh->get_variable_stack().push_context(false, true);
+              _u0.handle_context(sh->get_variable_stack());
+            }
+            for (auto & af : c.affectations)
+              (*this)(af);
+
             // we may have parent agruments as arguments
             stringificator strf(sh);
             std::vector<std::string> args;
@@ -139,10 +150,7 @@ namespace neam
             }
 
             // push the new context
-            sh->get_variable_stack().push_context(true, c.affectations.size() != 0);
-
-            for (auto &af : c.affectations)
-              (*this)(af);
+            raii_var_context _u1(sh->get_variable_stack(), true, false);
 
             std::string command_invocation;
             for (auto & e : c.command_name)
@@ -153,7 +161,6 @@ namespace neam
               sh->get_variable_stack().push_argument(ar);
             int ret = sh->run_cmd(command_invocation, streamp);
 
-            sh->get_variable_stack().pop_context();
             return ret;
           }
           int operator () (const var_affectation &af)
@@ -166,7 +173,6 @@ namespace neam
             for (auto & e : af.value)
               value += boost::apply_visitor(strf, e);
 
-            std::cout << var_name << " = " << value << std::endl;
             sh->get_variable_stack().set_variable(var_name, value);
             return 0;
           }

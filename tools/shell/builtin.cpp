@@ -1,5 +1,6 @@
 
 #include "builtin.hpp"
+#include "flow_control.hpp"
 
 neam::r::shell::builtin::builtin(std::function<callback_function_sig> _callback, const std::string &message_banner)
  : help_message_banner(message_banner), help_usage_message("[options]"), callback(_callback)
@@ -45,6 +46,10 @@ int neam::r::shell::builtin::call(const std::string &name, neam::r::shell::varia
         boost::program_options::store(boost::program_options::command_line_parser(args).options(desc).positional(pod).allow_unregistered().run(), vm);
       boost::program_options::notify(vm);
     }
+    catch (flow_control &e)
+    {
+      throw;
+    }
     catch (std::exception &e)
     {
       streamp[stream::stderr] << name << ": " << e.what() << std::endl;
@@ -55,6 +60,10 @@ int neam::r::shell::builtin::call(const std::string &name, neam::r::shell::varia
   try
   {
     ret = callback(name, stack, streamp, vm);
+  }
+  catch (flow_control &e)
+  {
+    throw;
   }
   catch (std::exception &e)
   {

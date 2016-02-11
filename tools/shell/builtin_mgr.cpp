@@ -2,6 +2,7 @@
 #include <list>
 #include <iomanip>
 #include "builtin_mgr.hpp"
+#include "flow_control.hpp"
 
 neam::r::shell::builtin_mgr::builtin_mgr()
 {
@@ -46,6 +47,10 @@ bool neam::r::shell::builtin_mgr::call(const std::string &name, neam::r::shell::
   try
   {
     ret = blt.call(name, stack, streamp);
+  }
+  catch (flow_control &e)
+  {
+    throw;
   }
   catch (std::exception &e) // avoid being killed by exception
   {

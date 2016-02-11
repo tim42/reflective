@@ -62,7 +62,7 @@ namespace neam
           const stream_pack &get_shell_streampack() const { return spack; }
 
           /// \brief run the shell (either an entire file or a simple command-line)
-          void run(const std::string &commands);
+          int run(const std::string &commands);
 
           /// \brief invoke a command. You must have setup the variable_stack correctly before
           ///        calling this.
