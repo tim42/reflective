@@ -172,7 +172,7 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
          << "label=\" " << callee_call_count << "\\n"
          << " self " << size_t(self_tm.first) << self_tm.second << "s\\n"
          << " gbl " << size_t(gbl_tm.first) << gbl_tm.second << "s" << "\";"
-//        << "weight=" << weight << ";"
+//         << "weight=" << weight * 600.f << ";"
          << "penwidth=" << weight << ";";
 
       if (callee_error_factor)
