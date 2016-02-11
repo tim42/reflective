@@ -28,6 +28,8 @@ void neam::r::function_call::common_init()
 
 neam::r::function_call::~function_call()
 {
+  size_t ts = std::time(nullptr);
+
   // Save the time monitoring (global & self)
   // TODO: thread safety
   if (self_time_monitoring)
@@ -35,14 +37,32 @@ neam::r::function_call::~function_call()
     const double delta = self_chrono.get_accumulated_time();
     {
       std::lock_guard<internal::mutex_type> _u0(global->lock);
+      size_t mcount = call_info.average_self_time_count;
+      if (conf::sliding_average)
+        mcount = std::min(mcount, conf::past_average_weight);
 
-      call_info.average_self_time = (call_info.average_self_time * call_info.average_self_time_count + delta) / (call_info.average_self_time_count + 1.);
+      call_info.average_self_time = (call_info.average_self_time * mcount + delta) / (mcount + 1.);
       ++call_info.average_self_time_count;
     }
     if (se)
     {
-      se->average_self_time = (se->average_self_time * se->average_self_time_count + delta) / (se->average_self_time_count + 1.);
+      size_t mcount = se->average_self_time_count;
+      if (conf::sliding_average)
+        mcount = std::min(mcount, conf::past_average_weight);
+
+      se->average_self_time = (se->average_self_time * mcount + delta) / (mcount + 1.);
       ++se->average_self_time_count;
+
+      if (se->self_time_progression.empty())
+        se->self_time_progression.push_back(duration_progression{ts, se->average_self_time});
+      else if ((se->self_time_progression.back().value < se->average_global_time && se->self_time_progression.back().value * conf::progression_min_factor < se->average_self_time)
+               || (se->self_time_progression.back().value > se->average_global_time && se->self_time_progression.back().value > se->average_self_time * conf::progression_min_factor))
+        se->self_time_progression.push_back(duration_progression{ts, se->average_self_time});
+      if (se->self_time_progression.size() > conf::max_progression_entries)
+      {
+        size_t diff = se->self_time_progression.size() - conf::max_progression_entries;
+        se->self_time_progression.erase(se->self_time_progression.begin(), se->self_time_progression.begin() + diff);
+      }
     }
   }
   if (global_time_monitoring)
@@ -51,13 +71,30 @@ neam::r::function_call::~function_call()
     {
       std::lock_guard<internal::mutex_type> _u0(global->lock);
 
-      call_info.average_global_time = (call_info.average_global_time * call_info.average_global_time_count + delta) / (call_info.average_global_time_count + 1.);
+      size_t mcount = call_info.average_global_time_count;
+      if (conf::sliding_average)
+        mcount = std::min(mcount, conf::past_average_weight);
+      call_info.average_global_time = (call_info.average_global_time * mcount + delta) / (mcount + 1.);
       ++call_info.average_global_time_count;
     }
     if (se)
     {
-      se->average_global_time = (se->average_global_time * se->average_global_time_count + delta) / (se->average_global_time_count + 1.);
+      size_t mcount = se->average_global_time_count;
+      if (conf::sliding_average)
+        mcount = std::min(mcount, conf::past_average_weight);
+      se->average_global_time = (se->average_global_time * mcount + delta) / (mcount + 1.);
       ++se->average_global_time_count;
+
+      if (se->global_time_progression.empty())
+        se->global_time_progression.push_back(duration_progression{ts, se->average_global_time});
+      else if ((se->global_time_progression.back().value < se->average_global_time && se->global_time_progression.back().value * conf::progression_min_factor < se->average_global_time)
+               || (se->global_time_progression.back().value > se->average_global_time && se->global_time_progression.back().value > se->average_global_time * conf::progression_min_factor))
+        se->global_time_progression.push_back(duration_progression{ts, se->average_global_time});
+      if (se->self_time_progression.size() > conf::max_progression_entries)
+      {
+        size_t diff = se->self_time_progression.size() - conf::max_progression_entries;
+        se->self_time_progression.erase(se->self_time_progression.begin(), se->self_time_progression.begin() + diff);
+      }
     }
   }
 
@@ -75,7 +112,6 @@ neam::r::function_call::~function_call()
 
 void neam::r::function_call::fail(const neam::r::reason &rsn)
 {
-
   if (se)
     se->fail_count++;
 

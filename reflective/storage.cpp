@@ -133,12 +133,17 @@ neam::r::internal::call_info_struct &neam::r::internal::get_call_info_struct_at_
 void neam::r::sync_data_to_disk(const std::string &file)
 {
   std::lock_guard<neam::r::internal::mutex_type> _u0(internal_lock);
-  neam::cr::raw_data serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::neam>(global_ptr);
+  neam::cr::raw_data serialized_data;
+
+  if (conf::use_json_backend)
+    serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::json>(global_ptr);
+  else
+    serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::neam>(global_ptr);
 
   std::ofstream of(file);
   of.write((const char *)serialized_data.data, serialized_data.size);
 
-    neam::cr::out.debug() << LOGGER_INFO << "Wrote '" << file << "'" << std::endl;
+  neam::cr::out.debug() << LOGGER_INFO << "Wrote '" << file << "'" << std::endl;
 }
 
 void neam::r::load_data_from_disk(const std::string &file)
@@ -169,7 +174,10 @@ void neam::r::load_data_from_disk(const std::string &file)
   serialized_data.data = (int8_t *)memory;
   serialized_data.size = size;
 
-  global_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::neam, neam::r::internal::data>(serialized_data);
+  if (conf::use_json_backend)
+    global_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::json, neam::r::internal::data>(serialized_data);
+  else
+    global_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::neam, neam::r::internal::data>(serialized_data);
 
   delete [] memory;
 

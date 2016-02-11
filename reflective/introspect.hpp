@@ -176,6 +176,7 @@ namespace neam
         {
           return call_info.descr.file;
         }
+
         /// \brief Return the line
         /// \see get_file()
         size_t get_line() const
@@ -204,6 +205,24 @@ namespace neam
         const func_descriptor &get_function_descriptor() const
         {
           return call_info.descr;
+        }
+
+        /// \brief return the duration progression of the self time
+        std::deque<duration_progression> get_self_duration_progression() const
+        {
+          if (!context)
+            return std::deque<duration_progression>();
+          else
+            return context->self_time_progression;
+        }
+
+        /// \brief return the duration progression of the global time
+        std::deque<duration_progression> get_global_duration_progression() const
+        {
+          if (!context)
+            return std::deque<duration_progression>();
+          else
+            return context->global_time_progression;
         }
 
         /// \brief Return the probability of a incoming failure

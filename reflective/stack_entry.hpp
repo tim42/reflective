@@ -29,11 +29,19 @@
 #include <cstdint>
 #include <cstddef>
 #include <vector>
+#include <deque>
 
 namespace neam
 {
   namespace r
   {
+    /// \brief Holds a progression entry
+    struct duration_progression
+    {
+      size_t timestamp; ///< \brief When the progression "has occured"
+      double value;     ///< \brief The value at the timestamp time
+    };
+
     namespace internal
     {
       /// \brief Hold an entry
@@ -52,8 +60,14 @@ namespace neam
 
         double average_self_time = 0; ///< \brief The average time consumed by the function and only this function
         size_t average_self_time_count = 0; ///< \brief Number of time the self_time has been monitored
+        std::deque<duration_progression> self_time_progression = std::deque<duration_progression>(); ///< \brief Hold the progression of the self_time average
         double average_global_time = 0; ///< \brief The average time consumed by the whole function call (including all its children)
         size_t average_global_time_count = 0; ///< \brief Number of time the global_time has been monitored
+        std::deque<duration_progression> global_time_progression = std::deque<duration_progression>();
+
+
+        // ----- //
+
 
         /// \brief push (or increment hit_count) into children a new call_info_struct.
         /// \note If not already in children, it will create a new stack_entry and insert its index at the end of children

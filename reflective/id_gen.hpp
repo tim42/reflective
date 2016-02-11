@@ -29,6 +29,23 @@
 #include <stdint.h>
 #include <tools/ct_string.hpp>
 
+/// \file id_gen.hpp
+/// \brief Generate IDs from things
+/// A simple note about why I need a ID generator and not typeid. typeid hashes are not unique AND not consistent
+/// between two invocation of the same program. (There **absolutely** no support for different builds by different compilers).
+/// But reflective being what it is, I needed a ID generator for generating consistent ID and the easiest way to do so was to
+/// compute a hash from a string. Hashes being hashes, they are not unique, but that was allowing a faster string/string comparison
+/// (even if it make the program calling 10 time strcmp for 10,000 functions, that was enough low to not use a complex structure like std::map).
+/// Moreover the hash can be computed at compile time and there is a (simple) cache system for memoizing results. So in term of complexity,
+/// for a program consisting of \e n functions called \e m time, you will search n time the DB consisting of n entries (complexity O(n²))
+/// but for a big enough \e m, you'll get an amortized complexity of O(1) because of the cache (and searching the cache consist of a single if()).
+/// That's why I set-up this system.
+///
+/// A possibility to generate unique hashes could be to use __builtin_return_address (gcc, clang) (or _ReturnAddress, msvc) in a non-inlineable function
+///
+/// And why not using std::{unordered_,}map from the start ? I needed to have an indexable DB with the guarantee that the address
+/// will NEVER be changed by insertions.
+
 namespace neam
 {
   namespace r
@@ -68,7 +85,7 @@ namespace neam
           // rotate
           byte = (byte << (i % 8)) | (byte >> (8 - (i % 8)));
 
-          // xor it in the hash. Nothing more...
+          // xor it in the hash.
           hash ^= (byte << (8 * (i % 3)));
         }
 

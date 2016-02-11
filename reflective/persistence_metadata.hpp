@@ -66,6 +66,20 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::reason, last_timestamp, names::r__reason::last_timestamp)
     > {};
 
+    // // duration_progression // //
+    NCRP_DECLARE_NAME(r__duration_progression, timestamp);
+    NCRP_DECLARE_NAME(r__duration_progression, value);
+    template<typename Backend> class persistence::serializable<Backend, r::duration_progression> : public persistence::serializable_object
+    <
+      Backend, // < the backend (here: all backends)
+
+      r::duration_progression, // < the class type to handle
+
+      // simply list here the members you want to serialize / deserialize
+      NCRP_NAMED_TYPED_OFFSET(r::duration_progression, timestamp, names::r__duration_progression::timestamp),
+      NCRP_NAMED_TYPED_OFFSET(r::duration_progression, value, names::r__duration_progression::value)
+    > {};
+
     // // data // //
     NCRP_DECLARE_NAME(r__data, launch_count);
     NCRP_DECLARE_NAME(r__data, func_info);
@@ -142,8 +156,10 @@ namespace neam
     NCRP_DECLARE_NAME(r__stack_entry, fail_count);
     NCRP_DECLARE_NAME(r__stack_entry, average_self_time);
     NCRP_DECLARE_NAME(r__stack_entry, average_self_time_count);
+    NCRP_DECLARE_NAME(r__stack_entry, self_time_progression);
     NCRP_DECLARE_NAME(r__stack_entry, average_global_time);
     NCRP_DECLARE_NAME(r__stack_entry, average_global_time_count);
+    NCRP_DECLARE_NAME(r__stack_entry, global_time_progression);
     NCRP_DECLARE_NAME(r__stack_entry, parent);
     NCRP_DECLARE_NAME(r__stack_entry, children);
     template<typename Backend> class persistence::serializable<Backend, r::internal::stack_entry> : public persistence::serializable_object
@@ -160,8 +176,10 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, fail_count, names::r__stack_entry::fail_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_self_time, names::r__stack_entry::average_self_time),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_self_time_count, names::r__stack_entry::average_self_time_count),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, self_time_progression, names::r__stack_entry::self_time_progression),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_global_time, names::r__stack_entry::average_global_time),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_global_time_count, names::r__stack_entry::average_global_time_count),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, global_time_progression, names::r__stack_entry::global_time_progression),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, parent, names::r__stack_entry::parent),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, children, names::r__stack_entry::children)
     > {};

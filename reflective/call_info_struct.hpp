@@ -54,6 +54,8 @@ namespace neam
         size_t average_global_time_count = 0; ///< \brief Number of time the global_time has been monitored
 
         std::vector<reason> fails = std::vector<reason>(); ///< \brief If activated, this will holds all the past fails reasons
+//         std::vector<reason> warns = std::vector<reason>(); ///< \brief If activated, this will holds all the past warning reasons
+//         std::vector<reason> notices = std::vector<reason>(); ///< \brief If activated, this will holds all the past notices reasons
       };
     } // namespace internal
   } // namespace r
