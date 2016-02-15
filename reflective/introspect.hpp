@@ -159,6 +159,14 @@ namespace neam
           return call_info.call_count;
         }
 
+        /// \brief Return the number of time the function has failed
+        inline size_t get_failure_count() const
+        {
+          if (context)
+            return context->fail_count;
+          return call_info.fail_count;
+        }
+
         /// \brief Return the pretty name (if available, else, fall back to the crappy name)
         /// DO NOT DELETE / FREE the returned pointer
         const char *get_pretty_name() const
@@ -242,13 +250,26 @@ namespace neam
             return context->average_self_time;
           return call_info.average_self_time;
         }
-
+        /// \brief Return the number of time the self_duration has been monitored
+        inline float get_average_self_duration_count() const
+        {
+          if (context)
+            return context->average_self_time_count;
+          return call_info.average_self_time_count;
+        }
         /// \brief Return the average duration of the function (including all sub calls (functions called into this function)
         inline float get_average_duration() const
         {
           if (context)
             return context->average_global_time;
           return call_info.average_global_time;
+        }
+        /// \brief Return the number of time the average_duration has been monitored
+        inline float get_average_duration_count() const
+        {
+          if (context)
+            return context->average_global_time_count;
+          return call_info.average_global_time_count;
         }
 
         /// \brief Return the last \e count errors for the function, most recent last
@@ -278,6 +299,20 @@ namespace neam
           size_t count = child.get_call_count();
 
           return internal::if_wont_fail<FuncType>(count, ratio, func);
+        }
+
+        /// \brief equality operator
+        bool operator == (const introspect &o) const
+        {
+          return o.context == this->context
+                 && &o.call_info == &this->call_info;
+        }
+
+        /// \brief inequality operator
+        bool operator != (const introspect &o) const
+        {
+          return o.context != this->context
+                 || &o.call_info != &this->call_info;
         }
 
       private:
