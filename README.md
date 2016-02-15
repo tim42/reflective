@@ -31,15 +31,28 @@ I am working on a solution to fix this, but if it add too much complexity to ref
 I've run reflective with YägGLer (a weird renderer that I wrote) in a multi-threaded, CPU intensive program, and there was no framerate drop (moreover the scheduler wasn't late to finish a frame).
 
 
-### tool
+### tools
 
-A `callgraph2dot` tool comes with reflective. It transform a reflective output file into a dot graph, adding to it some information from reflective (like the call count, self time, global time).
-`callgraph2dot` can perform some branch pruning to remove superfluous branches in the callgraph (this help doing performance analysis) and can also report errors and their path inside the callgraph.
+#### callgraph2dot
 
-It's the only tool present for the moment, but this one is important as it allows a visual preview of the data stored on-disk by persistence.
-An interesting thing to note, this tool is entirely written without acceding to the internal API of reflective.
+`callgraph2dot` transforms a reflective output file into a dot graph, adding to it some information from reflective (like the call count, self time, global time).
+It can perform some branch pruning to remove superfluous branches in the callgraph (this help doing performance analysis) and can also report errors and their path inside the callgraph.
+
+this tool is important as it allows a visual preview of the data stored on-disk by persistence.
 
 Example of an output dot graph (with branch pruning activated): ![callgraph](http://i.imgur.com/npRY6gQ.png)
+
+#### reflective-shell
+
+`reflective-shell` allow an user to get fine grained information from a reflective save/out file. Every piece of information that is collected by reflective is made available by this tool.
+It has a readme explaining how to use it [here](tools/shell/README.md)
+
+Why a shell ? I needed something easy to do, that has enough flexibility and was easy enough to use _and_ provide all the information someone could want to have.
+ - A GUI is not something easy to create. Moreover, you can't decently put a lot of option and keep the UX good enough.
+ - A SQL-like language would have been OK, but this would have generated a lot more work.
+The shell is simple (cd, ls, info, mode), easy to use (a directory-like structure), easy to create, with enough functionality (--options) and possible customizations (scripts).
+
+Moreover, in a near future you will be able to completely automate the process with scripts.
 
 ### reflective versus valgrind (memcheck, ca{che,ll}grind)
 
@@ -66,9 +79,8 @@ A program can also be used with reflective while being build in release mode, an
 
 ### future / TODO
 
-- create more tools to read and output data/information from reflective save file
+- create "partitions" in the reflective file, for keeping information about older version (or non-compatible builds) of the monitored program.
 - add warning and info level reports (like there is "fail" level reports)
-- add introspection abilities for monitoring regression on duration times
 - add conditional execution based on the average duration time.
 - benchmark the impact on the worst case of reflective (calling repetitively one empty function and calling a lot of different empty functions)
 
