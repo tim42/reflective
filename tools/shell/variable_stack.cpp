@@ -67,15 +67,11 @@ std::string neam::r::shell::variable_stack::get_variable(const std::string &name
   return "";
 }
 
-void neam::r::shell::variable_stack::set_variable(const std::string &name, const std::string &value, bool in_parent_context)
+void neam::r::shell::variable_stack::set_variable(const std::string &name, const std::string &value, bool in_root_context)
 {
-  if (context_stack.back().is_copy_on_write // cow context: no write operation possible outside the current context
-      || context_stack.size() == 1)         // no parent context.
-    in_parent_context = false;
-
   // create the variable in the right context
-  if (in_parent_context)
-    context_stack[context_stack.size() - 2].variable_list[name] = value;
+  if (in_root_context)
+    context_stack.front().variable_list[name] = value;
   else
     context_stack.back().variable_list[name] = value;
 }
@@ -132,15 +128,11 @@ const neam::r::shell::command_list *neam::r::shell::variable_stack::get_function
   return nullptr;
 }
 
-void neam::r::shell::variable_stack::set_function(const std::string &name, const neam::r::shell::command_list &func, bool in_parent_context)
+void neam::r::shell::variable_stack::set_function(const std::string &name, const neam::r::shell::command_list &func, bool in_root_context)
 {
-  if (context_stack.back().is_copy_on_write // cow context: no write operation possible outside the current context
-      || context_stack.size() == 1)         // no parent context.
-    in_parent_context = false;
-
   // create the variable in the right context
-  if (in_parent_context)
-    context_stack[context_stack.size() - 2].function_list[name] = func;
+  if (in_root_context)
+    context_stack.front().function_list[name] = func;
   else
     context_stack.back().function_list[name] = func;
 }

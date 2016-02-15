@@ -76,7 +76,7 @@ namespace neam
           int execute_no_context(const std::string &commands);
 
         private:
-          /// \brief register the :, help, exit, return, builtin, . || source builtins
+          /// \brief register the !, true, false, :, help, exit, return, builtin, . or source, shift, echo, ... builtins
           void register_base_builtins();
 
           void builtin_builtin();
@@ -87,6 +87,10 @@ namespace neam
           void builtin_return();
           void builtin_shift();
           void builtin_source();
+
+          void builtin_true();
+          void builtin_false();
+          void builtin_not();
 
         private:
           variable_stack vstack;

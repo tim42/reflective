@@ -62,6 +62,14 @@ BOOST_FUSION_ADAPT_STRUCT(
   (std::vector<neam::r::shell::command_node>, list)
 )
 BOOST_FUSION_ADAPT_STRUCT(
+  neam::r::shell::or_command_list,
+  (std::vector<neam::r::shell::command_node>, list)
+)
+BOOST_FUSION_ADAPT_STRUCT(
+  neam::r::shell::and_command_list,
+  (std::vector<neam::r::shell::command_node>, list)
+)
+BOOST_FUSION_ADAPT_STRUCT(
   neam::r::shell::subshell,
   (std::vector<neam::r::shell::command_node>, list)
 )
@@ -169,28 +177,31 @@ namespace neam
       namespace ascii = boost::spirit::ascii;
 
       /// \brief An ultra basic shell-like grammar
-      /// It handles comments, escape sequences, quoted strings, variables, `...` and $(...) expression, { ...; } command list, functions
+      /// It handles comments, escape sequences, quoted strings, variables, `...` and $(...) expression, { ...; } command list (including && and ||), functions
       template <typename Iterator>
       struct grammar
         : qi::grammar<Iterator, command_list()>
       {
         grammar()
-          : grammar::base_type(script, "reflective script")
+          : grammar::base_type(script, "script")
         {
           using ascii::char_;
           using namespace qi::labels;
 
           // // simple rules (mostly lexemes)
           comment %= '#' >> *(char_ - '\n');
-          keyword %= qi::lit("function");// | qi::lit("if") | qi::lit("fi") | qi::lit("then") | qi::lit("elif") | qi::lit("else");
+          keyword %= qi::lit("function") | '{' | '}';
           white_space %= qi::lit(' ') | qi::lit('\t');
-          command_end %= qi::lit(';') | qi::lit('\n') | qi::lit("&&") | qi::lit("||") | qi::eoi;  // explicit termination characters
+          command_end %= qi::lit(';') | qi::lit('\n') | qi::eoi; // explicit termination characters
           escape_seq = qi::lit('\\') >
                 (
                     qi::lit('n') [_val = '\n']    // escape sequences
                   | qi::lit('t') [_val = '\t']
                   | qi::lit('v') [_val = '\v']
                   | qi::lit('f') [_val = '\f']
+                  | qi::lit('r') [_val = '\r']
+                  | qi::lit('a') [_val = '\a']
+                  | qi::lit('b') [_val = '\b']
                   | qi::lit('e') [_val = '\e']
                   | qi::lit('\\') [_val = '\\']   // escaped special chars
                   | qi::lit('\n') [_val = '\n']   // NOTE: this one differ in bash, where in non-quoted strings it is substituted by nothing
@@ -204,10 +215,12 @@ namespace neam
                   | qi::lit('#') [_val = '#']     // comment
                   | qi::lit('(') [_val = '('] | qi::lit(')') [_val = ')']     // bracket
                   | qi::lit('{') [_val = '{'] | qi::lit('}') [_val = '}']     // curly-brace
+                  | qi::lit('&') [_val = '&']
+                  | qi::lit('|') [_val = '|']
                   | (qi::lit('x') > qi::repeat(2)[char_("0-9a-fA-F")] [_val = internal::hex_to_char(phoenix::ref(_1)[0], phoenix::ref(_1)[1])]) // hex strings
                 );
 
-          special_char %= white_space | command_end | '"' | '\'' | '`' | '=' | '$' | '{' | '(' | ')' | '}';     // chars that can't appears unescaped in a not-quoted string
+          special_char %= white_space | command_end | '"' | '\'' | '`' | '=' | '$' | '(' | ')' | '&' | '|';     // chars that can't appears unescaped in a not-quoted string
 
           // // the actual grammar
           nq_string %= +(escape_seq | (char_ - (special_char | '\\')));                             // not quoted strings
@@ -230,20 +243,30 @@ namespace neam
 
           // A single command (can't start with '#')
           single_command %= !char_('#') >> !char_('{') >> !char_('(')
-                  >> (*(*white_space >> variable_affectation)
+                  >> *(*white_space >> variable_affectation)
                   >> *white_space >> !keyword >> argument
                   >> *(+white_space >> argument)
-                  >> *white_space);
+                  >> *white_space;
 
           // A command list (between { and })
-          command_chain %= qi::skip(+white_space || comment)["{" >> *qi::lit('\n') > +command_gen >> *qi::lit('\n') > "}" > command_end >> *qi::lit('\n')];
-          subshell_rule %= qi::skip(+white_space || comment)["(" >> *qi::lit('\n') > +command_gen >> *qi::lit('\n') > ")" > command_end >> *qi::lit('\n')];
+          command_chain %= qi::skip(+white_space || comment)["{" >> *qi::lit('\n') > +command_gen >> *qi::lit('\n') > "}" > (command_end|&(qi::lit('&')|'|')) >> *qi::lit('\n')];
+          // A subshell (between ( and ))
+          subshell_rule %= qi::skip(+white_space || comment)["(" >> *qi::lit('\n') > +command_gen >> *qi::lit('\n') > ")" > (command_end|&(qi::lit('&')|'|')) >> *qi::lit('\n')];
+
+          // A || command list
+          or_command_list_rule = *white_space >> (and_command_list_rule|command_chain|subshell_rule|single_command|function|variable_affectation) [phoenix::push_back(phoenix::at_c<0>(_val), _1)]
+                               >> +("||" > (and_command_list_rule|command_chain|subshell_rule|single_command|function|variable_affectation) [phoenix::push_back(phoenix::at_c<0>(_val), _1)])
+                               >> *(white_space);
+          // A && command list
+          and_command_list_rule = *white_space >> (command_chain|subshell_rule|single_command|function|variable_affectation) [phoenix::push_back(phoenix::at_c<0>(_val), _1)]
+                               >> +("&&" > (command_chain|subshell_rule|single_command|function|variable_affectation) [phoenix::push_back(phoenix::at_c<0>(_val), _1)])
+                               >> *(white_space);
 
           // A function declaration:
           function %= "function" > +(white_space) > (variable_id|variable_expansion) >> *(white_space|'\n') > command_chain;
 
           // A more generic concept of command (matches anything executable)
-          command_gen %= *white_space >> (command_chain|subshell_rule|single_command|function|variable_affectation) >> -command_end >> *(white_space|'\n');
+          command_gen %= *white_space >> (or_command_list_rule|and_command_list_rule|command_chain|subshell_rule|single_command|function|variable_affectation) >> -command_end >> *(white_space|'\n');
 
           // The script (we skip comments to build a list of commands)
           script %= qi::skip(+(white_space|'\n') || comment)
@@ -255,6 +278,8 @@ namespace neam
           script.name("script");
           command_chain.name("command list");
           subshell_rule.name("subshell");
+          or_command_list_rule.name("|| command list");
+          and_command_list_rule.name("&& command list");
           single_command.name("command");
           function.name("function declaration");
           command_gen.name("command");
@@ -281,6 +306,8 @@ namespace neam
         qi::rule<Iterator, command_list()> command_chain;
         qi::rule<Iterator, subshell()> subshell_rule;
         qi::rule<Iterator, command()> single_command;
+        qi::rule<Iterator, or_command_list()> or_command_list_rule;
+        qi::rule<Iterator, and_command_list()> and_command_list_rule;
         qi::rule<Iterator, function_declaration()> function;
         qi::rule<Iterator, command_node()> command_gen;
         qi::rule<Iterator, var_affectation()> variable_affectation;

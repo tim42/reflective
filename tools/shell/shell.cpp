@@ -46,10 +46,7 @@ int neam::r::shell::shell::run_cmd(const std::string &invocation_name, stream_pa
       {
         return exec::run(this, *cl);
       }
-      catch (return_flow_control &r)
-      {
-        return r.retval;
-      }
+      catch (return_flow_control &r) { return r.retval; }
       catch (flow_control &fc)
       {
         streamp[stream::stderr] << invocation_name << ": bad usage of " << fc.name << std::endl;
@@ -83,6 +80,10 @@ void neam::r::shell::shell::register_base_builtins()
   builtin_return();
   builtin_shift();
   builtin_source();
+
+  builtin_true();
+  builtin_false();
+  builtin_not();
 }
 
 void neam::r::shell::shell::builtin_builtin()
@@ -92,16 +93,13 @@ void neam::r::shell::shell::builtin_builtin()
     vs.shift_arguments();
     const std::deque<std::string> &args = vs.get_argument_array();
     if (args.empty())
-    {
-      streamp[stream::stderr] << name << ": missing builtin name parameter" << std::endl;
-      return 1;
-    }
-    std::string forward_name = args[0];
+      return 0;
+    std::string forward_name = args[1];
     int ret = 1;
     bool called = bltmgr.call(forward_name, vs, streamp, ret);
     if (!called)
     {
-      streamp[stream::stderr] << name << ": unknown builtin '" << forward_name << "'" << std::endl;
+      streamp[stream::stderr] << name << ": " << forward_name << ": not a builtin" << std::endl;
       return 1;
     }
     return ret;
@@ -146,55 +144,57 @@ void neam::r::shell::shell::builtin_echo()
 
 
     bool not_first = false;
-    for (const std::string &str : vm["string"].as<std::vector<std::string>>())
+    if (vm.count("string"))
     {
-      if (not_first)
-        streamp[stream::stdout] << ' ';
-      not_first = true;
-
-      if (escapes)
+      for (const std::string & str : vm["string"].as<std::vector<std::string>>())
       {
-        std::string result;
-        bool escaped = false;
-        for (size_t i = 0; i < str.size(); ++i)
+        if (not_first)
+          streamp[stream::stdout] << ' ';
+        not_first = true;
+
+        if (escapes)
         {
-          if (escaped)
+          std::string result;
+          bool escaped = false;
+          for (size_t i = 0; i < str.size(); ++i)
           {
-            switch (str[i])
+            if (escaped)
             {
-              case '\\': result += '\\'; break;
-              case 'a': result += '\a'; break;
-              case 'b': result += '\b'; break;
-              case 'e': result += '\e'; break;
-              case 'f': result += '\f'; break;
-              case 'n': result += '\n'; break;
-              case 'r': result += '\r'; break;
-              case 't': result += '\t'; break;
-              case 'v': result += '\v'; break;
-              case 'x':
-                if (i + 2 < str.size())
+              switch (str[i])
+              {
+                case '\\': result += '\\'; break;
+                case 'a': result += '\a'; break;
+                case 'b': result += '\b'; break;
+                case 'e': result += '\e'; break;
+                case 'f': result += '\f'; break;
+                case 'n': result += '\n'; break;
+                case 'r': result += '\r'; break;
+                case 't': result += '\t'; break;
+                case 'v': result += '\v'; break;
+                case 'x':
+                  if (i + 2 < str.size())
+                    break;
+                  {
+                    char data[] = {str[i + 1], str[i + 2], 0};
+                    i += 2;
+                    char *_u;
+                    char t = strtoul(data, &_u, 16);
+                    result += t;
+                  }
                   break;
-                {
-                  char data[] = {str[i + 1], str[i + 2], 0};
-                  i += 2;
-                  char *_u;
-                  char t = strtoul(data, &_u, 16);
-                  result += t;
-                }
-                break;
-              default: result += str[i];
-                break;
+                default: result += str[i]; break;
+              }
             }
+            else if (str[i] == '\\')
+              escaped = true;
+            else
+              result += str[i];
           }
-          else if (str[i] == '\\')
-            escaped = true;
-          else
-            result += str[i];
+          streamp[stream::stdout] << result;
         }
-        streamp[stream::stdout] << result;
+        else
+          streamp[stream::stdout] << str;
       }
-      else
-        streamp[stream::stdout] << str;
     }
 
     if (newline)
@@ -202,7 +202,7 @@ void neam::r::shell::shell::builtin_echo()
 
     return 0;
   }, "display text", "[options] string to print");
-  blt.add_options() ("string", boost::program_options::value<std::vector<std::string>>(), "the string to print")
+  blt.add_options() ("string", boost::program_options::value<std::vector<std::string>>(), "the string to print (should be omitted)")
                     ("no-newline,n", "do not output the trailing newline")
                     ("escapes,e", "enable interpretation of backslash escapes")
                     ("no-escapes,E", "disable interpretation of backslash escapes (default)");
@@ -353,5 +353,41 @@ void neam::r::shell::shell::builtin_shift()
   }, "shift parameters down", "[n]");
   blt.do_not_use_program_options();
   bltmgr.register_builtin("shift", blt);
+}
+
+void neam::r::shell::shell::builtin_true()
+{
+  builtin &blt = *new builtin([&](const std::string &, variable_stack &, stream_pack &, boost::program_options::variables_map &) -> int
+  {
+    return 0;
+  }, "return true", "[whatever]");
+  blt.do_not_use_program_options();
+  bltmgr.register_builtin("true", blt);
+}
+
+void neam::r::shell::shell::builtin_false()
+{
+  builtin &blt = *new builtin([&](const std::string &, variable_stack &, stream_pack &, boost::program_options::variables_map &) -> int
+  {
+    return 1;
+  }, "return false", "[whatever]");
+  blt.do_not_use_program_options();
+  bltmgr.register_builtin("false", blt);
+}
+
+void neam::r::shell::shell::builtin_not()
+{
+  builtin &blt = *new builtin([&](const std::string &, variable_stack &vs, stream_pack &streamp, boost::program_options::variables_map &) -> int
+  {
+    vs.shift_arguments();
+    const std::deque<std::string> &args = vs.get_argument_array();
+    if (args.empty())
+      return 1;
+    std::string forward_name = args[1];
+    int ret = this->run_cmd(forward_name, streamp);
+    return ret ? 0 : 1;
+  }, "inverse the return value of a command", "[command [arguments]]");
+  blt.do_not_use_program_options();
+  bltmgr.register_builtin("!", blt);
 }
 

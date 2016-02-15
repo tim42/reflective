@@ -2,7 +2,10 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+
+#include <tools/logger/logger.hpp>
 #include "shell.hpp"
+#include "reflective_builtins.hpp"
 
 #include <stdio.h>
 #ifdef _WIN32
@@ -13,11 +16,13 @@
 #include <unistd.h>
 #endif
 
+#include <reflective.hpp>
+
 /// \brief Handle the message printing
-static int print_usage(const std::string &arg = "", bool fail = false);
+static int print_usage(boost::program_options::options_description &desc);
 
 /// \brief Forward some options to the shell/file
-static void forward_argv(neam::r::shell::shell &shell, int argc, char **argv, int start_index);
+static void forward_argv(neam::r::shell::shell &shell, const std::vector<std::string> &params, size_t start_index = 0);
 
 /// \brief Run the shell from a file
 static int shell_from_file(neam::r::shell::shell &shell, const std::string &file);
@@ -27,82 +32,112 @@ static int shell_from_stdin(neam::r::shell::shell &shell);
 
 int main(int argc, char **argv)
 {
+  // setup the conf
+  neam::r::conf::disable_auto_save = true;
+  neam::r::conf::out_file = "";
+
+  // setup boost po
   bool from_file = false;
   bool from_argv = false;
   bool forced_normal = false;
-
-  // don't want boost program option to manage this: can't deal with short-option-only.
-  if (argc > 1)
+  bool load_only = true;
+  std::vector<std::string> params;
+  boost::program_options::options_description desc;
+  desc.add_options()
+    ("help,h", "print this help and exit")
+    ("load,l", boost::program_options::value<std::string>(), "pre-load a reflective save file")
+    ("stdin,s", "read commands from the standard input")
+    ("command,c", "read  commands  from the command_string operand. no commands shall be read from the standard input.")
+    ("param", boost::program_options::value<std::vector<std::string>>(&params),
+              "positional parameters. Can hold the command_string, (if -c specified), "
+              "the file to execute and its arguments (if -s NOT specified) "
+              "or shell arguments that will be in $1..$N (if -s specified). "
+              "can be ignored: you can simply put the value without the --param");
+  boost::program_options::positional_options_description pod;
+  pod.add("param", -1);
+  boost::program_options::variables_map vm;
+  try
   {
-    std::string a1(argv[1]);
-    if (a1 == "-c")
-      from_argv = true;
-    else if (a1 == "-s")
-      forced_normal = true;
-    else if (a1 == "-h" || a1 == "--help")
-      return print_usage();
-    else if (a1[0] != '-')
-      from_file = true;
-    else if (a1 == "--")
-      from_file = argc > 3;
-    else
-      return print_usage(a1, true);
+    boost::program_options::store(boost::program_options::command_line_parser(argc, argv).options(desc).positional(pod).allow_unregistered().run(), vm);
+    boost::program_options::notify(vm);
   }
+  catch (std::exception &e)
+  {
+    std::cerr << argv[0] << ": " << e.what() << std::endl;
+    print_usage(desc);
+    return 1;
+  }
+
+  // handle options
+  from_argv = vm.count("command");
+  forced_normal = vm.count("stdin");
+  from_file = !from_argv && !forced_normal && params.size();
+
+  if (from_argv && !params.size())
+  {
+    std::cerr << argv[0] << ": -c requires a command_string" << std::endl;
+    return 1;
+  }
+  if (vm.count("help"))
+  {
+    print_usage(desc);
+    return 0;
+  }
+
+  load_only = !vm.count("load");
 
   // the shell
   neam::r::shell::shell shell;
 
-  // from a command placed as argument
-  if (from_argv)
+  if (!load_only)
   {
-    if (argc < 2)
+    if (!neam::r::shell::load_reflective_file(shell, vm["load"].as<std::string>()))
     {
-      std::cerr << "The -c argument takes a command" << std::endl;
-      print_usage();
+      std::cerr << ": load: could not load " << vm["load"].as<std::string>() << std::endl;
       return 1;
     }
-    return shell.run(argv[2]);
   }
+  else
+    neam::r::shell::register_reflective_builtins(shell);
+
+  // set $0
+  if (!from_file)
+    shell.get_variable_stack().push_argument(argv[0]);
+
+  // set $1..$N (or $0..$N if it's from a file)
+  forward_argv(shell, params, from_argv ? 1 : 0);
+
+  // run the shell
+  if (from_argv)
+    return shell.run(params[0]);
   else if (from_file)
-  {
-    int idx = 1;
-    if (std::string("--") == argv[1])
-      idx = 2;
-    forward_argv(shell, argc, argv, idx);
-    return shell_from_file(shell, argv[idx]);
-  }
-  else if (forced_normal) // we got args, but that's not a file
-    forward_argv(shell, argc, argv, 1);
+    return shell_from_file(shell, params[0]);
 
   // read from stdin
   return shell_from_stdin(shell);
+}
+
+int print_usage(boost::program_options::options_description &desc)
+{
+  std::cout << "reflective shell: query informations from neam::reflective save files\n"
+            << "Usage:\n"
+            << "\trshell [-l file] -s [argument...]\n"
+            << "\trshell [-l file] -c command\n"
+            << "\trshell [-l file] [--] [[file] [argument...]]\n"
+            << "\nOptions:\n"
+            << desc << std::endl;
 
   return 0;
 }
 
-int print_usage(const std::string &arg, bool fail)
+void forward_argv(neam::r::shell::shell &shell, const std::vector<std::string> &params, size_t start_index)
 {
-  int ret = 0;
-  if (fail)
+  size_t i = 0;
+  for (const std::string &it : params)
   {
-    std::cerr << "error: unknown option " << arg << std::endl;
-    ret = 1;
+    if (i++ >= start_index)
+      shell.get_variable_stack().push_argument(it);
   }
-
-  std::cout << "reflective shell: query informations from neam::reflective save files\n"
-            << "Usage:\n"
-            << "\trshell -s [argument...]\n"
-            << "\trshell -c command\n"
-            << "\trshell [--] [[file] [argument...]]"
-            << std::endl;
-
-  return ret;
-}
-
-void forward_argv(neam::r::shell::shell &shell, int argc, char **argv, int start_index)
-{
-  for (int i = start_index; i < argc; ++i)
-    shell.get_variable_stack().push_argument(argv[i]);
 }
 
 int shell_from_file(neam::r::shell::shell &shell, const std::string &filename)
@@ -131,7 +166,7 @@ int shell_from_file(neam::r::shell::shell &shell, const std::string &filename)
   memory[size] = 0;
   std::string content = memory;
   delete [] memory;
-  shell.run(content);
+  return shell.run(content);
 }
 
 int shell_from_stdin(neam::r::shell::shell &shell)

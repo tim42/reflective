@@ -22,8 +22,9 @@ void neam::r::shell::builtin::help(const std::string &name, neam::r::shell::stre
   }
   if (!help_message_banner.empty())
     streamp[stream::stdout] << name << ": " << help_message_banner << std::endl;
-  streamp[stream::stdout] << "Usage: " << name << " " << help_usage_message << "\n"
-                          << desc << std::endl;
+  streamp[stream::stdout] << "Usage: " << name << " " << help_usage_message << "\n";
+  if (!skip_program_options)
+    streamp[stream::stdout] << desc << std::endl;
 }
 
 int neam::r::shell::builtin::call(const std::string &name, neam::r::shell::variable_stack &stack, neam::r::shell::stream_pack &streamp)
@@ -32,7 +33,7 @@ int neam::r::shell::builtin::call(const std::string &name, neam::r::shell::varia
   if (!res.size()) // should never happen
   {
     streamp[stream::stderr] << "error in builtin " << name << ": bad builtin call (buggy shell)" << std::endl;
-    return -1;
+    return 1;
   }
 
   std::vector<std::string> args(res.begin() + 1, res.end());
@@ -46,13 +47,11 @@ int neam::r::shell::builtin::call(const std::string &name, neam::r::shell::varia
         boost::program_options::store(boost::program_options::command_line_parser(args).options(desc).positional(pod).allow_unregistered().run(), vm);
       boost::program_options::notify(vm);
     }
-    catch (flow_control &e)
-    {
-      throw;
-    }
     catch (std::exception &e)
     {
       streamp[stream::stderr] << name << ": " << e.what() << std::endl;
+      vm.clear();
+      return 1;
     }
   }
 
@@ -61,10 +60,7 @@ int neam::r::shell::builtin::call(const std::string &name, neam::r::shell::varia
   {
     ret = callback(name, stack, streamp, vm);
   }
-  catch (flow_control &e)
-  {
-    throw;
-  }
+  catch (flow_control &e) { throw; }
   catch (std::exception &e)
   {
     streamp[stream::stderr] << "error in builtin " << name << ": caught exception: " << e.what() << std::endl;

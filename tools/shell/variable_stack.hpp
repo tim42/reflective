@@ -72,9 +72,9 @@ namespace neam
           bool has_variable(const std::string &name) const;
 
           /// \brief Create a new variable
-          /// \note in_parent_context indicate if the variable should be created in the parent context (the context of the caller)
+          /// \note in_parent_context indicate if the variable should be created in the root context (the context of the shell)
           ///       instead of the current one.
-          void set_variable(const std::string &name, const std::string &value = "", bool in_parent_context = false);
+          void set_variable(const std::string &name, const std::string &value = "", bool in_root_context = false);
 
           /// \brief Remove a variable
           /// \note In a cow context, it does nothing if the variable is not in the current context
@@ -88,9 +88,9 @@ namespace neam
           bool has_function(const std::string &name) const;
 
           /// \brief Create a new function
-          /// \note in_parent_context indicate if the function should be created in the parent context (the context of the caller)
+          /// \note in_parent_context indicate if the function should be created in the root context (the context of the shell)
           ///       instead of the current one.
-          void set_function(const std::string &name, const command_list &func, bool in_parent_context = false);
+          void set_function(const std::string &name, const command_list &func, bool in_root_context = false);
 
           /// \brief Remove a function
           /// \note In a cow context, it does nothing if the function is not in the current context

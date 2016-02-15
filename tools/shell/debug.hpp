@@ -85,6 +85,32 @@ namespace neam
             print_indent(indent);
             std::cout << "}";
           }
+          void operator()(const and_command_list &cl) const
+          {
+            bool first = true;
+            std::cout << " [and> ";
+            for (auto &c : cl.list)
+            {
+              if (!first)
+                std::cout << " && ";
+              first = false;
+              boost::apply_visitor(printer(indent + 1), c);
+            }
+            std::cout << " <and] ";
+          }
+          void operator()(const or_command_list &cl) const
+          {
+            bool first = true;
+            std::cout << " [or> ";
+            for (auto &c : cl.list)
+            {
+              if (!first)
+                std::cout << " || ";
+              first = false;
+              boost::apply_visitor(printer(indent + 1), c);
+            }
+            std::cout << " <or] ";
+          }
           void operator()(const subshell &cl) const
           {
             std::cout << "(\n";

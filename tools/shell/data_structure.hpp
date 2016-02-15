@@ -41,13 +41,17 @@ namespace neam
       struct var_expansion;
       struct function_declaration;
       struct var_affectation;
+      struct or_command_list;
+      struct and_command_list;
       using command_node = boost::variant
       <
-        boost::recursive_wrapper<var_affectation>,
-        boost::recursive_wrapper<command>,
-        boost::recursive_wrapper<command_list>,
-        boost::recursive_wrapper<subshell>,
-        boost::recursive_wrapper<function_declaration>
+        boost::recursive_wrapper<var_affectation>,      // a=b
+        boost::recursive_wrapper<command>,              // a simple command
+        boost::recursive_wrapper<subshell>,             // ( a=b; ls; echo OK; )
+        boost::recursive_wrapper<command_list>,         // { a=b; ls; echo OK; }
+        boost::recursive_wrapper<or_command_list>,      // false || false || ! true || echo $1
+        boost::recursive_wrapper<and_command_list>,     // true && true && ! false && echo $1
+        boost::recursive_wrapper<function_declaration>  // function toto { a=b; echo $1; return 5; }
       >;
       using node = boost::variant
       <
@@ -58,35 +62,49 @@ namespace neam
 
       using node_list = std::vector<node>;
 
-      // when expanding variables
+      /// \brief ${TO${2}X}
       struct var_expansion
       {
         node_list variable_name;
       };
 
-      // when affecting variables
+      /// \brief a=$(OK)
       struct var_affectation
       {
         node_list variable_name;
         node_list value;
       };
 
-      // a command
+      /// \brief a simple/single command
       struct command
       {
         std::vector<var_affectation> affectations;
         node_list command_name;
         std::vector<node_list> arguments;
       };
+      /// \brief { a=b; ls; echo OK; }
       struct command_list
       {
         std::vector<command_node> list;
       };
+
+      /// \brief false || false || ! true || echo $1
+      struct or_command_list
+      {
+        std::vector<command_node> list;
+      };
+      /// \brief true && true && ! false && echo $1
+      struct and_command_list
+      {
+        std::vector<command_node> list;
+      };
+      /// \brief ( a=b; ls; echo OK; )
       struct subshell
       {
         std::vector<command_node> list;
       };
 
+      /// \brief function toto { a=b; echo $1; return 5; }
       struct function_declaration
       {
         node_list name;

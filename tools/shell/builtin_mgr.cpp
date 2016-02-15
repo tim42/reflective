@@ -48,10 +48,7 @@ bool neam::r::shell::builtin_mgr::call(const std::string &name, neam::r::shell::
   {
     ret = blt.call(name, stack, streamp);
   }
-  catch (flow_control &e)
-  {
-    throw;
-  }
+  catch (flow_control &e) { throw; }
   catch (std::exception &e) // avoid being killed by exception
   {
     streamp[stream::stderr] << "error in builtin " << name << ": caught exception: " << e.what() << std::endl;

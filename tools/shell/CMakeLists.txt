@@ -14,6 +14,8 @@ set(srcs    ./main.cpp
             ./streams.cpp
             ./shell.cpp
             ./parse_command.cpp
+            ./reflective_builtins.cpp
+            ./reflective_manager.cpp
 )
 
 add_definitions(${PROJ_FLAGS})
@@ -23,7 +25,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${PROJ_FLAGS}")
 set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} ${PROJ_FLAGS}")
 
 add_executable(${TOOL_NAME} ${srcs})
-target_link_libraries(${TOOL_NAME} ${Boost_PROGRAM_OPTIONS_LIBRARY} tools-common ${PROJ_APP} ${libntools})
+target_link_libraries(${TOOL_NAME} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} tools-common ${PROJ_APP} ${libntools})
 
 # install that tool
 install(TARGETS ${TOOL_NAME} DESTINATION bin/neam)

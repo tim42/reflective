@@ -117,6 +117,28 @@ namespace neam
               last = boost::apply_visitor(*this, c);
             return last;
           }
+          int operator()(const or_command_list &cl)
+          {
+            int last = 0;
+            for (auto &c : cl.list)
+            {
+              last = boost::apply_visitor(*this, c);
+              if (!last)
+                break;
+            }
+            return last;
+          }
+          int operator()(const and_command_list &cl)
+          {
+            int last = 0;
+            for (auto &c : cl.list)
+            {
+              last = boost::apply_visitor(*this, c);
+              if (last)
+                break;
+            }
+            return last;
+          }
           int operator()(const subshell &ss)
           {
             raii_var_context(sh->get_variable_stack(), false, true);
