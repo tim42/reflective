@@ -102,7 +102,18 @@ namespace sample
         output_introspect_vector("called by:", fnc_introspect.get_caller_list());
 
         // output a called by list
-        output_introspect_vector("call:", fnc_introspect.get_callee_list());
+        output_introspect_vector("calls:", fnc_introspect.get_callee_list());
+
+        const auto &measure_point_map = fnc_introspect.get_measure_point_map();
+        if (measure_point_map.size())
+        {
+          std::cout << "  measure points:\n";
+          for (const auto &it : measure_point_map)
+          {
+            auto mpetm = get_time(it.second.value);
+            std::cout << "    " << it.first << ": " << mpetm.first << ' ' << mpetm.second << "seconds\n";
+          }
+        }
 
         // output the last error
         std::vector<neam::r::reason> last_error = fnc_introspect.get_failure_reasons(1);

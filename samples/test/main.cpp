@@ -16,10 +16,27 @@ class s
   public:
     void d()
     {
-      neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(s::d));
-      for (volatile size_t k = 0; k < 100000; ++k);
+      // create a silly measure_point
+      neam::r::measure_point mp1("function_call-constructor-time");
 
-      if (rand() % 50 < 3)
+      neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(s::d));
+
+      // stop the measure_point
+      mp1.stop();
+
+      // another silly measure_point
+      neam::r::measure_point mp2("half-time", neam::r::defer_start);
+
+      volatile size_t max = 100000;
+      volatile size_t r = 0;
+      for (volatile size_t k = 0; k < max; ++k)
+      {
+        if (k == (max / 2))
+          mp2.start();
+        r += rand();
+      }
+
+      if ((rand() ^ r) % 50 < 3)
         self_call.fail(neam::r::lazy_programmer_reason(N_REASON_INFO, "[can't touch this]"));
     }
 
@@ -27,7 +44,7 @@ class s
     {
       neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(s::f));
 
-      // randomly make the prog segfault
+      // randomly make the prog segfault-
       if (rand() % 100000 < 10)
       {
         neam::cr::out.warning() << LOGGER_INFO << "random crash spotted !" << std::endl;
