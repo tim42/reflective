@@ -251,7 +251,7 @@ void print_introspect(const neam::r::introspect &it, std::iostream &ios)
       << "  " << it.get_name();
 }
 
-auto print_file_info(neam::r::shell::shell &sh, const std::string &add_path)
+auto print_file_info(neam::r::shell::shell &, const std::string &add_path)
 {
   return [&](const std::string &it, std::iostream &ios)
   {
@@ -273,7 +273,7 @@ auto print_file_info(neam::r::shell::shell &sh, const std::string &add_path)
 
 void neam::r::shell::blt_ls(neam::r::shell::shell &sh)
 {
-  builtin &blt = *new builtin([&](const std::string &name, variable_stack &vs, stream_pack &streamp, boost::program_options::variables_map &vm) -> int
+  builtin &blt = *new builtin([&](const std::string &, variable_stack &, stream_pack &streamp, boost::program_options::variables_map &vm) -> int
   {
     bool long_option = vm.count("long");
     bool force_function = vm.count("function");
@@ -413,13 +413,33 @@ void info_print_introspect_info(neam::r::introspect &info, bool full_listing, st
         ios << "  at " << std::put_time(std::localtime((long *)&dp.timestamp), "%F %T") << ": " << int(dptm.first) << dptm.second << "s\n";
       }
     }
+  }
 
+  // measure points
+  const auto &measure_point_map = info.get_measure_point_map();
+  if (measure_point_map.size())
+  {
+    ios << "measure points:\n";
+    for (const auto & it : measure_point_map)
+    {
+      auto mpetm = get_time(it.second.value);
+      ios << "  " << it.first << ": " << mpetm.first << mpetm.second << "s\n";
+    }
+  }
+
+  if (full_listing)
+  {
     // callee/caller
-    ios << "calls:\n";
-    for (const neam::r::introspect &it : info.get_callee_list())
+    std::vector<neam::r::introspect> vct = info.get_callee_list();
+    if (vct.size())
+      ios << "calls:\n";
+    for (const neam::r::introspect &it : vct)
       ios << "  " << it.get_pretty_name() << '\n';
-    ios << "called by:\n";
-    for (const neam::r::introspect &it : info.get_caller_list())
+
+    vct = info.get_caller_list();
+    if (vct.size())
+      ios << "called by:\n";
+    for (const neam::r::introspect &it : vct)
       ios << "  " << it.get_pretty_name() << '\n';
   }
 
@@ -451,7 +471,7 @@ neam::r::introspect info_get_introspect(bool global, const std::string &name)
 
 void neam::r::shell::blt_info(neam::r::shell::shell &sh)
 {
-  builtin &blt = *new builtin([&](const std::string &name, variable_stack &vs, stream_pack &streamp, boost::program_options::variables_map &vm) -> int
+  builtin &blt = *new builtin([&](const std::string &name, variable_stack &, stream_pack &streamp, boost::program_options::variables_map &vm) -> int
   {
     std::string element;
 
@@ -486,7 +506,12 @@ void neam::r::shell::blt_info(neam::r::shell::shell &sh)
           {
             std::vector<neam::r::reason> errlist = itp.get_failure_reasons(error_count);
             if (errlist.size())
-              streamp[stream::stdout] << "errors:\n";
+            {
+              streamp[stream::stdout] << "errors:";
+              if (itp.is_contextual())
+                streamp[stream::stdout] << " (including errors from other contexts)";
+              streamp[stream::stdout] << '\n';
+            }
             for (const neam::r::reason & r : errlist)
             {
               streamp[stream::stdout] << "  " << r.type << ": '" << (r.message ? r.message : "") << "'" << "\n"
@@ -532,13 +557,13 @@ void neam::r::shell::blt_info(neam::r::shell::shell &sh)
                    ("error,e", "display the ${error-count} last error(s) (only valid in the function mode)")
                    ("error-count,c", boost::program_options::value<size_t>()->default_value(1), "set the number of errors to display")
                    ("global,g", "specify that the search scope is global: the 'element' is the name of a function, not a path (relative or not). Only works for functions.")
-                   ("element", boost::program_options::value<std::string>(), "specify a custom element (relative or absolute). Defaults to the cwd element");
+                   ("element", boost::program_options::value<std::string>(), "specify a custom element (relative or absolute). Defaults to the cwd element.");
   blt.get_positional_options_description().add("element", 1);
   blt.disallow_unknow_parameters();
   sh.get_builtin_manager().register_builtin("info", blt);
 }
 
-void neam::r::shell::blt_callgraph2dot(neam::r::shell::shell &sh)
+void neam::r::shell::blt_callgraph2dot(neam::r::shell::shell &)
 {
   // TODO
 }
