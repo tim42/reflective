@@ -146,7 +146,7 @@ void neam::r::sync_data_to_disk(const std::string &file)
   neam::cr::out.debug() << LOGGER_INFO << "Wrote '" << file << "'" << std::endl;
 }
 
-void neam::r::load_data_from_disk(const std::string &file)
+bool neam::r::load_data_from_disk(const std::string &file)
 {
   if (global_ptr)
   {
@@ -157,12 +157,21 @@ void neam::r::load_data_from_disk(const std::string &file)
   std::string contents;
   std::ifstream inf(file);
 
+  if (!inf)
+  {
+    neam::cr::out.warning() << LOGGER_INFO << "Failed to load '" << file << "': file does not exists" << std::endl;
+    return false;
+  }
+
   inf.seekg(0, std::ios_base::end);
   long size = inf.tellg();
   inf.seekg(0, std::ios_base::beg);
 
   if (!size || size < 0)
-    return;
+  {
+    neam::cr::out.warning() << LOGGER_INFO << "Failed to load '" << file << "': empty file" << std::endl;
+    return false;
+  }
 
   char *memory = new char[size + 1];
 
@@ -200,9 +209,11 @@ void neam::r::load_data_from_disk(const std::string &file)
       ++stack_index;
     }
     neam::cr::out.debug() << LOGGER_INFO << "Loaded '" << file << "'" << std::endl;
+    return true;
   }
   else
   {
     neam::cr::out.warning() << LOGGER_INFO << "Failed to load '" << file << "', data is probably corrupted" << std::endl;
+    return false;
   }
 }

@@ -159,7 +159,7 @@ namespace neam
     void sync_data_to_disk(const std::string &file);
 
     /// \brief Load from the disk
-    void load_data_from_disk(const std::string &file);
+    bool load_data_from_disk(const std::string &file);
 
     /// \brief Return the number of time the program has been launched
     static inline size_t get_launch_count()
