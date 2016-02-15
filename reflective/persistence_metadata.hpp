@@ -80,6 +80,20 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::duration_progression, value, names::r__duration_progression::value)
     > {};
 
+    // // measure_point_entry // //
+    NCRP_DECLARE_NAME(r__measure_point_entry, hit_count);
+    NCRP_DECLARE_NAME(r__measure_point_entry, value);
+    template<typename Backend> class persistence::serializable<Backend, r::measure_point_entry> : public persistence::serializable_object
+    <
+      Backend, // < the backend (here: all backends)
+
+      r::measure_point_entry, // < the class type to handle
+
+      // simply list here the members you want to serialize / deserialize
+      NCRP_NAMED_TYPED_OFFSET(r::measure_point_entry, hit_count, names::r__measure_point_entry::hit_count),
+      NCRP_NAMED_TYPED_OFFSET(r::measure_point_entry, value, names::r__measure_point_entry::value)
+    > {};
+
     // // data // //
     NCRP_DECLARE_NAME(r__data, launch_count);
     NCRP_DECLARE_NAME(r__data, func_info);
@@ -131,6 +145,7 @@ namespace neam
     NCRP_DECLARE_NAME(r__call_info_struct, average_global_time);
     NCRP_DECLARE_NAME(r__call_info_struct, average_global_time_count);
     NCRP_DECLARE_NAME(r__call_info_struct, fails);
+    NCRP_DECLARE_NAME(r__call_info_struct, measure_points);
     template<typename Backend> class persistence::serializable<Backend, r::internal::call_info_struct> : public persistence::serializable_object
     <
       Backend, // < the backend (here: all backends)
@@ -145,6 +160,7 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_self_time_count, names::r__call_info_struct::average_self_time_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_global_time, names::r__call_info_struct::average_global_time),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_global_time_count, names::r__call_info_struct::average_global_time_count),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, measure_points, names::r__call_info_struct::measure_points),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, fails, names::r__call_info_struct::fails)
     > {};
 

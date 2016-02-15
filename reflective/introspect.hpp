@@ -215,6 +215,22 @@ namespace neam
           return call_info.descr;
         }
 
+        /// \brief get a measure point
+        /// \note If no measure point is found, it returns nullptr
+        const measure_point_entry *get_measure_point_entry(const std::string &name) const
+        {
+          const auto &it = call_info.measure_points.find(name);
+          if (it == call_info.measure_points.end())
+            return nullptr;
+          return &it->second;
+        }
+
+        /// \brief Return the whole measure point map
+        const std::map<std::string, measure_point_entry> &get_measure_point_map() const
+        {
+          return call_info.measure_points;
+        }
+
         /// \brief return the duration progression of the self time
         std::deque<duration_progression> get_self_duration_progression() const
         {

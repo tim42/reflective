@@ -185,6 +185,8 @@ namespace neam
         internal::stack_entry *se = nullptr;
         bool self_time_monitoring = conf::monitor_self_time;
         bool global_time_monitoring = conf::monitor_global_time;
+
+        friend class measure_point;
     };
 
 

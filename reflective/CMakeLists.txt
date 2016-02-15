@@ -8,6 +8,7 @@ set(PROJ_SOURCES
   ./introspect.cpp
   ./if_wont_fail.cpp
   ./signal.cpp
+  ./measure_point.cpp
 )
 
 add_definitions(${PROJ_FLAGS})

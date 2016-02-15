@@ -29,6 +29,7 @@
 #include "config.hpp"
 #include "function_call.hpp"
 #include "introspect.hpp"
+#include "measure_point.hpp"
 
 #define N_REFLECTIVE_PRESENT
 

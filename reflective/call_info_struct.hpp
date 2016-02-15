@@ -27,6 +27,8 @@
 # define __N_54570708560285988_386345818__CALL_STRUCT_HPP__
 
 #include <cstdint>
+#include <vector>
+#include <map>
 
 #include "reason.hpp"
 #include "func_descriptor.hpp"
@@ -36,6 +38,13 @@ namespace neam
 {
   namespace r
   {
+    /// \brief Information about a measure point
+    struct measure_point_entry
+    {
+      size_t hit_count = 0; /// \brief Number of time the measure_point has been "hit"
+      double value = 0;     /// \brief The average value
+    };
+
     namespace internal
     {
       /// \brief Hold some information about a called function
@@ -53,9 +62,10 @@ namespace neam
         double average_global_time = 0; ///< \brief The average time consumed by the whole function call (including all its children)
         size_t average_global_time_count = 0; ///< \brief Number of time the global_time has been monitored
 
-        std::vector<reason> fails = std::vector<reason>(); ///< \brief If activated, this will holds all the past fails reasons
-//         std::vector<reason> warns = std::vector<reason>(); ///< \brief If activated, this will holds all the past warning reasons
-//         std::vector<reason> notices = std::vector<reason>(); ///< \brief If activated, this will holds all the past notices reasons
+        std::vector<reason> fails = std::vector<reason>(); ///< \brief Holds all the past fails reasons
+
+        // GCC does not like std::map<std::string, measure_point_entry> measure_points = std::map<std::string, measure_point_entry>()
+        std::map<std::string, measure_point_entry> measure_points = decltype(measure_points)(); /// \brief Holds informations about measure points
       };
     } // namespace internal
   } // namespace r
