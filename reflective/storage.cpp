@@ -1,5 +1,6 @@
 
 #include <fstream>
+#include <ctime>
 
 #include <tools/logger/logger.hpp>
 #include "storage.hpp"
@@ -7,6 +8,9 @@
 #include "persistence_metadata.hpp"
 #include "config.hpp"
 
+using root_data = std::deque<neam::r::internal::data>;
+
+static root_data *root_ptr = nullptr;
 static neam::r::internal::data *global_ptr = nullptr;
 static thread_local neam::r::internal::thread_local_data *tl_ptr = nullptr;
 
@@ -21,14 +25,20 @@ neam::r::internal::thread_local_data *neam::r::internal::get_thread_data()
 
 neam::r::internal::data *neam::r::internal::get_global_data()
 {
-  if (!global_ptr) // don't lock at each time
+  if (!global_ptr) // don't lock each time
   {
     std::lock_guard<neam::r::internal::mutex_type> _u0(internal_lock);
     if (!global_ptr)
     {
       load_data_from_disk(conf::out_file);
+      if (!root_ptr)
+        root_ptr = new root_data;
       if (!global_ptr)
-        global_ptr = new data;
+      {
+        if (root_ptr->empty())
+          root_ptr->emplace_back(neam::r::internal::data());
+        global_ptr = &root_ptr->back();
+      }
     }
   }
   return global_ptr;
@@ -136,9 +146,9 @@ void neam::r::sync_data_to_disk(const std::string &file)
   neam::cr::raw_data serialized_data;
 
   if (conf::use_json_backend)
-    serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::json>(global_ptr);
+    serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::json>(root_ptr);
   else
-    serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::neam>(global_ptr);
+    serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::neam>(root_ptr);
 
   std::ofstream of(file);
   of.write((const char *)serialized_data.data, serialized_data.size);
@@ -148,11 +158,12 @@ void neam::r::sync_data_to_disk(const std::string &file)
 
 bool neam::r::load_data_from_disk(const std::string &file)
 {
-  if (global_ptr)
+  if (root_ptr)
   {
-    delete global_ptr;
-    global_ptr = nullptr;
+    delete root_ptr;
+    root_ptr = nullptr;
   }
+  global_ptr = nullptr;
 
   std::string contents;
   std::ifstream inf(file);
@@ -184,29 +195,36 @@ bool neam::r::load_data_from_disk(const std::string &file)
   serialized_data.size = size;
 
   if (conf::use_json_backend)
-    global_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::json, neam::r::internal::data>(serialized_data);
+    root_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::json, root_data>(serialized_data);
   else
-    global_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::neam, neam::r::internal::data>(serialized_data);
+    root_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::neam, root_data>(serialized_data);
 
   delete [] memory;
 
-  if (global_ptr)
+  if (root_ptr)
   {
-    ++global_ptr->launch_count;
-    std::lock_guard<internal::mutex_type> _u0(global_ptr->lock); // lock 'cause we do a lot of nasty things.
-
-    // walk the whole callgraph to set correct ids
-    size_t stack_index = 0;
-    for (auto & graph_it : global_ptr->callgraph)
+    if (root_ptr->size())
     {
-      size_t index = 0;
-      for (internal::stack_entry &it : graph_it)
+      global_ptr = &root_ptr->back();
+      ++global_ptr->launch_count;
+    }
+    for (internal::data &data_it : *root_ptr)
+    {
+      std::lock_guard<internal::mutex_type> _u0(data_it.lock); // lock 'cause we do a lot of nasty things.
+
+      // walk the whole callgraph to set correct ids
+      size_t stack_index = 0;
+      for (auto & graph_it : data_it.callgraph)
       {
-        const_cast<size_t &>(it.self_index) = index;
-        const_cast<size_t &>(it.stack_index) = stack_index;
-        ++index;
+        size_t index = 0;
+        for (internal::stack_entry & it : graph_it)
+        {
+          const_cast<size_t &>(it.self_index) = index;
+          const_cast<size_t &>(it.stack_index) = stack_index;
+          ++index;
+        }
+        ++stack_index;
       }
-      ++stack_index;
     }
     neam::cr::out.debug() << LOGGER_INFO << "Loaded '" << file << "'" << std::endl;
     return true;
@@ -217,3 +235,91 @@ bool neam::r::load_data_from_disk(const std::string &file)
     return false;
   }
 }
+
+// // // STASH // // //
+
+void neam::r::stash_current_data(const std::string &name)
+{
+  internal::get_global_data(); // init, if not already done
+
+  // stash it !
+  global_ptr->name = name;
+  global_ptr->timestamp = time(nullptr);
+  root_ptr->push_back(internal::data());
+  global_ptr = &root_ptr->back();
+
+  if (std::max(2l, conf::max_stash_count) < long(root_ptr->size()) && conf::max_stash_count >= 0)
+    root_ptr->pop_front();
+}
+
+bool neam::r::load_data_from_stash(const std::string &data_name)
+{
+  internal::get_global_data(); // init, if not already done
+
+  for (internal::data &data_it : *root_ptr)
+  {
+    if (data_it.name == data_name)
+    {
+      global_ptr = &data_it;
+      return true;
+    }
+  }
+  return false;
+}
+
+bool neam::r::auto_stash_current_data(const std::string &name)
+{
+  internal::get_global_data(); // init, if not already done
+
+  if (global_ptr->name.empty())
+  {
+    global_ptr->name = name;
+    return false;
+  }
+  if (global_ptr->name == name)
+    return false;
+
+  stash_current_data(global_ptr->name);
+  global_ptr->name = name;
+  return true;
+}
+
+std::vector<std::string> neam::r::get_stashes_name()
+{
+  internal::get_global_data(); // init, if not already done
+
+  std::vector<std::string> namevec;
+  for (internal::data &data_it : *root_ptr)
+  {
+    if (data_it.name.empty())
+      namevec.push_back("[unnamed]");
+    else
+      namevec.push_back(data_it.name);
+  }
+  return namevec;
+}
+
+std::vector<long> neam::r::get_stashes_timestamp()
+{
+  internal::get_global_data(); // init, if not already done
+
+  std::vector<long> tsvec;
+  for (internal::data &data_it : *root_ptr)
+    tsvec.push_back(data_it.timestamp);
+  return tsvec;
+}
+
+size_t neam::r::get_active_stash_index()
+{
+  internal::get_global_data(); // init, if not already done
+
+  size_t index = 0;
+  for (internal::data &data_it : *root_ptr)
+  {
+    if (global_ptr == &data_it)
+      return index;
+    ++index;
+  }
+  return -1;
+}
+

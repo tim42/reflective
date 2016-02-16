@@ -46,6 +46,9 @@ namespace neam
       extern size_t max_progression_entries; ///< \brief The maximum entries in the progression vectors (default is somewhere between 25 and 50)
 
       extern bool use_json_backend; ///< \brief Use the json backend instead of the default (binary) one. The default is to NOT use it. (the default backend is faster, better, ... than the json one).
+                                    ///  \note Small number are not well handled with the json backend, so you'll almost certainly end-up with zeroes all over your self/global durations
+
+      extern long max_stash_count;  ///< \brief Default is somewhere around 5. It's the maximum number of stashes to keep. -1 mean no limit. Minimum is 2.
     } // namespace conf
   } // namespace r
 } // namespace neam

@@ -20,6 +20,8 @@ namespace neam
       size_t max_progression_entries = 25;
 
       bool use_json_backend = false;
+
+      long max_stash_count = 5;
     } // namespace conf
   } // namespace r
 } // namespace neam

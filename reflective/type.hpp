@@ -26,7 +26,7 @@
 #ifndef __N_865426894276070490_1131732371__TYPE_HPP__
 # define __N_865426894276070490_1131732371__TYPE_HPP__
 
-#include <mutex>
+#include <tools/spinlock.hpp>
 
 namespace neam
 {
@@ -35,7 +35,7 @@ namespace neam
     namespace internal
     {
       /// \brief The type of mutex used by classes
-      using mutex_type = std::mutex;
+      using mutex_type = neam::spinlock;
 
       /// \brief only present for type deduction
       template<typename T> struct type { using t = T; };

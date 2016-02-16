@@ -49,6 +49,12 @@ namespace neam
       class data
       {
         public: // methods
+          data(const data &o)
+          : launch_count(o.launch_count), func_info(o.func_info),
+            callgraph(o.callgraph), name(o.name), timestamp(o.timestamp)
+          {}
+          data() = default;
+          ~data() = default;
 
         public: // attributes
           size_t launch_count = 1;
@@ -57,6 +63,10 @@ namespace neam
           std::deque<call_info_struct> func_info; // protected by the mutex lock
 
           std::deque<std::deque<stack_entry>> callgraph; // only insertions &lookups are permitted, protected by the mutex lock
+
+          // when stashed only //
+          std::string name;
+          long timestamp;
 
         private:
           /// \brief Called after the deserialization (thus the name)
@@ -166,6 +176,42 @@ namespace neam
     {
       return internal::get_global_data()->launch_count;
     }
+
+    /// \brief Stash the current data and start a new, clear, one
+    /// \note You may want to call this before any function_call has been created
+    ///       (or after every single ones have been destructed):
+    ///       you may end having corrupted/half merged data...
+    void stash_current_data(const std::string &name);
+
+    /// \brief Load a past/archived reflective data from the stash.
+    /// \note You may want to call this before any function_call has been created
+    ///       (or after every single ones have been destructed):
+    ///       you may end having corrupted/half merged data...
+    bool load_data_from_stash(const std::string &data_name);
+
+    /// \brief Stash the current data and start a new, clear, one
+    /// \param[in] name the name of the new stash, if created. A new stash is created if this parameter
+    ///                 is not the same as the name of the last stash.
+    /// \return true if the current data has been saved to a new stash.
+    /// \see N_DEFAULT_STASH_NAME
+    /// \note You may want to call this before any function_call has been created
+    ///       (or after every single ones have been destructed):
+    ///       you may end having corrupted/half merged data...
+    bool auto_stash_current_data(const std::string &name);
+
+    /// \brief Return the names of the entries currently in the stash
+    std::vector<std::string> get_stashes_name();
+
+    /// \brief Return the timestamp of the entries currently in the stash
+    std::vector<long> get_stashes_timestamp();
+
+    /// \brief Return the index of the active data
+    size_t get_active_stash_index();
+
+/// \brief A default stash name that goes well with auto_stash_current_data()
+/// \see auto_stash_current_data()
+#define N_DEFAULT_STASH_NAME "stash/" __DATE__ " " __TIME__
+
   } // namespace r
 } // namespace neam
 
