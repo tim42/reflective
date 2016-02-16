@@ -25,6 +25,7 @@ namespace neam
       static void blt_ls(shell &sh);
       static void blt_pwd(shell &sh);
       static void blt_info(shell &sh);
+      static void blt_stash(shell &sh);
       static void blt_callgraph2dot(shell &sh);
 
       static enum class e_dir_mode
@@ -47,6 +48,7 @@ void neam::r::shell::register_reflective_builtins(shell &sh, bool load_only)
     blt_pwd(sh);
     blt_ls(sh);
     blt_info(sh);
+    blt_stash(sh);
     blt_callgraph2dot(sh);
   }
 }
@@ -562,6 +564,72 @@ void neam::r::shell::blt_info(neam::r::shell::shell &sh)
   blt.disallow_unknow_parameters();
   sh.get_builtin_manager().register_builtin("info", blt);
 }
+
+void neam::r::shell::blt_stash(neam::r::shell::shell &sh)
+{
+    builtin &blt = *new builtin([&](const std::string &name, variable_stack &, stream_pack &streamp, boost::program_options::variables_map &vm) -> int
+  {
+    std::string element;
+
+    // gather options
+    if (vm.count("select"))
+      element = vm["select"].as<std::string>();
+    bool only_active = vm.count("active");
+    bool with_timestamp = vm.count("timestamp");
+
+    // run ! run ! run !
+
+    if (vm.count("select"))
+    {
+      if (!neam::r::load_data_from_stash(element))
+      {
+        streamp[stream::stderr] << name << ": " << element << ": Cannot find a stash entry with this name" << std::endl;
+        return 1;
+      }
+      only_active = true;
+    }
+
+    std::vector<long> timestamps = neam::r::get_stashes_timestamp();
+    std::vector<std::string> names = neam::r::get_stashes_name();
+    const size_t active_idx = neam::r::get_active_stash_index();
+
+    if (only_active)
+    {
+      streamp[stream::stdout] << "* " << names[active_idx];
+      if (with_timestamp && timestamps[active_idx])
+        streamp[stream::stdout] << "  [" << std::put_time(std::localtime(&timestamps[active_idx]), "%F %T") << "]";
+      else if (with_timestamp)
+        streamp[stream::stdout] << "  [active]";
+      streamp[stream::stdout] << std::endl;
+    }
+    else
+    {
+      for (size_t i = 0; i < names.size(); ++i)
+      {
+        if (i == active_idx)
+          streamp[stream::stdout] << "* ";
+        else
+          streamp[stream::stdout] << "  ";
+
+        streamp[stream::stdout] << names[i];
+        if (with_timestamp && timestamps[i])
+          streamp[stream::stdout] << "  [" << std::put_time(std::localtime(&timestamps[i]), "%F %T") << "]";
+        else if (with_timestamp)
+          streamp[stream::stdout] << "  [active]";
+        streamp[stream::stdout] << std::endl;
+      }
+    }
+
+    return 0;
+  }, "manage stashes", "[options] [[-s] stash-name]");
+  blt.add_options()("select,s", boost::program_options::value<std::string>(), "Select a stash to use")
+                   ("active,a", "only print the active stash")
+                   ("timestamp,t", "also display the timestamp");
+  blt.get_positional_options_description().add("select", 1);
+  blt.disallow_unknow_parameters();
+  sh.get_builtin_manager().register_builtin("stash", blt);
+}
+
 
 void neam::r::shell::blt_callgraph2dot(neam::r::shell::shell &)
 {
