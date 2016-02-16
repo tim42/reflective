@@ -90,11 +90,11 @@ void neam::r::shell::shell::builtin_builtin()
 {
   builtin &blt = *new builtin([&](const std::string &name, variable_stack &vs, stream_pack &streamp, boost::program_options::variables_map &) -> int
   {
-    vs.shift_arguments();
     const std::deque<std::string> &args = vs.get_argument_array();
     if (args.empty())
       return 0;
     std::string forward_name = args[1];
+    vs.shift_arguments(1);
     int ret = 1;
     bool called = bltmgr.call(forward_name, vs, streamp, ret);
     if (!called)

@@ -232,12 +232,11 @@ bool neam::r::shell::variable_stack::shift_arguments(size_t shift_count)
   {
     for (; i < context_stack.size(); ++i)
     {
-      if (context_stack[context_stack.size() - 1 - i].has_argument_list)
+      if (context_stack[context_stack.size() - 1 - i].has_argument_list
+          || context_stack[context_stack.size() - 1 - i].is_copy_on_write)
         cptr = &context_stack[context_stack.size() - 1 - i];
     }
   }
-  else
-    cptr->has_argument_list = true;
 
   cow_copy_argument_list(cptr, i);
 
@@ -251,7 +250,7 @@ bool neam::r::shell::variable_stack::shift_arguments(size_t shift_count)
 
   // shift
   if (cptr->argument_list.size() > 1)
-    cptr->argument_list.erase(cptr->argument_list.begin() + 1, cptr->argument_list.begin() + shift_count);
+    cptr->argument_list.erase(cptr->argument_list.begin() + 1, cptr->argument_list.begin() + 1 + shift_count);
 
   return ret;
 }
