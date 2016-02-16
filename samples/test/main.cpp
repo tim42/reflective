@@ -90,6 +90,9 @@ int main(int /*argc*/, char **/*argv*/)
   // some signal handlers
   neam::r::install_default_signal_handler({SIGABRT, SIGSEGV, SIGFPE, SIGINT});
 
+  // auto stash
+  neam::r::auto_stash_current_data(N_DEFAULT_STASH_NAME);
+
   // make the logger verbose
   neam::cr::out.log_level = neam::cr::stream_logger::verbosity_level::debug;
 
@@ -101,6 +104,21 @@ int main(int /*argc*/, char **/*argv*/)
   sample::introspect_function("s::f");
   sample::introspect_function("fnc");
   sample::introspect_function("main");
+
+  // print all stashes:
+  {
+    std::cout << "\nstashes:\n";
+    size_t cidx = 0;
+    const size_t active_idx = neam::r::get_active_stash_index();
+    for (const std::string & n : neam::r::get_stashes_name())
+    {
+      if (cidx++ == active_idx)
+        std::cout << "  * " << n << '\n';
+      else
+        std::cout << "    " << n << '\n';
+    }
+    std::cout << std::endl;
+  }
 
   s lol;
 
