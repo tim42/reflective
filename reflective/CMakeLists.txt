@@ -26,3 +26,20 @@ install(DIRECTORY ./ DESTINATION include/neam/reflective
         PATTERN "cmake" EXCLUDE
         PATTERN "samples" EXCLUDE)
 
+# link tools
+set(tools_dest ${NEAM_INSTALL_PREFIX}/include/neam/reflective/)
+set(tools_target ${NEAM_INSTALL_PREFIX}/include/neam/tools)
+if (UNIX)
+  install(CODE "execute_process(COMMAND ln -s \"${tools_target}\" \"${tools_dest}/\")")
+else()
+  install(CODE "file(COPY ${tools_target} DESTINATION ${tools_dest})")
+endif()
+
+# link persistence
+set(persistence_dest ${NEAM_INSTALL_PREFIX}/include/neam/reflective/)
+set(persistence_target ${NEAM_INSTALL_PREFIX}/include/neam/persistence)
+if (UNIX)
+  install(CODE "execute_process(COMMAND ln -s \"${persistence_target}\" \"${persistence_dest}/\")")
+else()
+  install(CODE "file(COPY ${persistence_target} DESTINATION ${persistence_dest})")
+endif()

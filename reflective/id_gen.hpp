@@ -27,7 +27,7 @@
 # define __N_147554771727415468_1812229998__ID_GEN_HPP__
 
 #include <stdint.h>
-#include <tools/ct_string.hpp>
+#include "tools/ct_string.hpp"
 
 /// \file id_gen.hpp
 /// \brief Generate IDs from things

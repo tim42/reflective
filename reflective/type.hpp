@@ -26,7 +26,7 @@
 #ifndef __N_865426894276070490_1131732371__TYPE_HPP__
 # define __N_865426894276070490_1131732371__TYPE_HPP__
 
-#include <tools/spinlock.hpp>
+#include "tools/spinlock.hpp"
 
 namespace neam
 {

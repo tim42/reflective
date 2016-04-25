@@ -26,7 +26,7 @@
 #ifndef __N_4809451401143654794_770423445__PERSISTENCE_METADATA_HPP__
 # define __N_4809451401143654794_770423445__PERSISTENCE_METADATA_HPP__
 
-#include <persistence/persistence.hpp>
+#include "persistence/persistence.hpp"
 
 #include "reason.hpp"
 #include "func_descriptor.hpp"
