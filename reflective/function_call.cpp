@@ -1,5 +1,7 @@
 
 #include <ctime>
+#include <exception>
+#include "tools/logger/logger.hpp"
 #include "function_call.hpp"
 #include "introspect.hpp"
 
@@ -14,7 +16,8 @@ void neam::r::function_call::common_init()
   se = nullptr;
   if (prev)
   {
-    prev->self_chrono.pause(); // pause the previous self-chrono
+    if (prev->self_time_monitoring)
+      prev->self_chrono.pause(); // pause the previous self-chrono
 
     // stack_entry things
     if (prev->se)
@@ -23,11 +26,17 @@ void neam::r::function_call::common_init()
   else
     se = &internal::stack_entry::initial_get_stack_entry(call_info_index);
 
+  if (conf::watch_uncaught_exceptions && std::uncaught_exception())
+    has_exception = true;
+
   tl_data->top = this;
 }
 
 neam::r::function_call::~function_call()
 {
+  if (tl_data->top != this)
+    return;
+
   size_t ts = std::time(nullptr);
 
   // Save the time monitoring (global & self)
@@ -98,13 +107,21 @@ neam::r::function_call::~function_call()
     }
   }
 
+  if (conf::watch_uncaught_exceptions && std::uncaught_exception() && !has_exception)
+  {
+    fail(exception_reason(call_info.descr.file, call_info.descr.line, "function termination due to an uncaught exception in this function"));
+    if (prev)
+      prev->has_exception = true;
+  }
+
   // restore the previous context
-  if (prev)
+  if (prev && prev->self_time_monitoring)
     prev->self_chrono.resume();
   else
     internal::stack_entry::dispose_initial();
 
-  tl_data->top = prev;
+  if (tl_data->top == this)
+    tl_data->top = prev;
 
   if (!prev && !conf::disable_auto_save)
     neam::r::sync_data_to_disk(conf::out_file); // there's nothing after us, sync data to a file
@@ -112,6 +129,11 @@ neam::r::function_call::~function_call()
 
 void neam::r::function_call::fail(const neam::r::reason &rsn)
 {
+  if (conf::print_fails_to_stdout)
+  {
+    neam::cr::out.error() << LOGGER_INFO_TPL(rsn.file, rsn.line) << rsn.type << ": "  << rsn.message << std::endl;
+  }
+
   if (se)
     se->fail_count++;
 
@@ -129,6 +151,31 @@ void neam::r::function_call::fail(const neam::r::reason &rsn)
     }
     else
       call_info.fails.push_back(neam::r::reason {rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
+  }
+}
+
+void neam::r::function_call::report(const std::string &mode, const neam::r::reason &rsn)
+{
+  if (conf::print_reports_to_stdout)
+  {
+    neam::cr::out.log() << LOGGER_INFO_TPL(rsn.file, rsn.line) << mode << ": " << rsn.type << ": " << rsn.message << std::endl;
+  }
+
+  // Avoid huge reports if we always hit the same thing
+  // We don't test the whole array 'cause we want to keep the ordering
+  size_t ts = std::time(nullptr);
+  {
+    std::lock_guard<internal::mutex_type> _u0(global->lock);
+
+    auto &vct = call_info.reports[mode];
+
+    if (vct.size() && vct.back() == rsn)
+    {
+      ++vct.back().hit;
+      vct.back().last_timestamp = ts;
+    }
+    else
+      vct.push_back(neam::r::reason {rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
   }
 }
 

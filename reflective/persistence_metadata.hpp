@@ -27,6 +27,10 @@
 # define __N_4809451401143654794_770423445__PERSISTENCE_METADATA_HPP__
 
 #include "persistence/persistence.hpp"
+#include "persistence/stl/vector.hpp"
+#include "persistence/stl/deque.hpp"
+#include "persistence/stl/map.hpp"
+#include "persistence/stl/string.hpp"
 
 #include "reason.hpp"
 #include "func_descriptor.hpp"
@@ -149,6 +153,7 @@ namespace neam
     NCRP_DECLARE_NAME(r__call_info_struct, average_global_time);
     NCRP_DECLARE_NAME(r__call_info_struct, average_global_time_count);
     NCRP_DECLARE_NAME(r__call_info_struct, fails);
+    NCRP_DECLARE_NAME(r__call_info_struct, reports);
     NCRP_DECLARE_NAME(r__call_info_struct, measure_points);
     template<typename Backend> class persistence::serializable<Backend, r::internal::call_info_struct> : public persistence::serializable_object
     <
@@ -165,7 +170,8 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_global_time, names::r__call_info_struct::average_global_time),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_global_time_count, names::r__call_info_struct::average_global_time_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, measure_points, names::r__call_info_struct::measure_points),
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, fails, names::r__call_info_struct::fails)
+      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, fails, names::r__call_info_struct::fails),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, reports, names::r__call_info_struct::reports)
     > {};
 
     // // stack_entry // //

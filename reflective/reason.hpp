@@ -35,10 +35,10 @@ namespace neam
     /// \brief A failure reason
     struct reason
     {
-      const char *type;
-      const char *message = nullptr;
+      std::string type = std::string();
+      std::string message = std::string();
 
-      const char *file = nullptr;
+      std::string file = std::string();
       size_t line = 0;
 
       // --- //
@@ -54,20 +54,20 @@ namespace neam
       ///  // or
       /// self_call.fail(neam::r::out_of_memory_reason(N_REASON_INFO, "failed to allocate memory for my_huge_array"));
       /// \endcode
-      constexpr reason operator() (const char *_file, size_t _line) const { return reason { type, message, _file, _line }; }
-      constexpr reason operator() (const char *_file, size_t _line, const char *_message) const { return reason { type, _message, _file, _line }; }
+      reason operator() (const std::string &_file, size_t _line) const { return reason { type, message, _file, _line }; }
+      reason operator() (const std::string &_file, size_t _line, const std::string &_message) const { return reason { type, _message, _file, _line }; }
 
       /// \brief Equality operator
-      constexpr bool operator == (const reason &o) const
+      bool operator == (const reason &o) const
       {
         return o.line == this->line
-               && ((o.file == nullptr && o.file == this->file) || !strcmp(o.file ? o.file : "", this->file ? this->file : ""))
-               && ((o.message == nullptr && o.message == this->message) || !strcmp(o.message ? o.message : "", this->message ? this->message : ""))
-               && ((o.type == nullptr && o.type == this->type) || !strcmp(o.type ? o.type : "", this->type ? this->type : ""));
+               && (o.file == this->file)
+               && (o.message == this->message)
+               && (o.type == this->type);
       }
 
       /// \brief Inequality operator
-      constexpr bool operator != (const reason &o) const
+      bool operator != (const reason &o) const
       {
         return !(*this == o);
       }
@@ -82,26 +82,26 @@ namespace neam
 #define N_REASON_INFO __FILE__, __LINE__
 
     // predefined reasons
-    static constexpr reason out_of_memory_reason = reason {"out of memory"};
-    static constexpr reason bad_allocation_reason = reason {"bad allocation"};
-    static constexpr reason syscall_failed_reason = reason {"syscall failed"};
-    static constexpr reason exception_reason = reason {"exception caught"};
-    static constexpr reason assert_reason = reason {"assertion is false"};
+    static const reason out_of_memory_reason = reason {"out of memory"};
+    static const reason bad_allocation_reason = reason {"bad allocation"};
+    static const reason syscall_failed_reason = reason {"syscall failed"};
+    static const reason exception_reason = reason {"exception caught"};
+    static const reason assert_reason = reason {"assertion is false"};
 
-    static constexpr reason file_not_found_reason = reason {"file not found"};
-    static constexpr reason error_reason = reason {"error"}; // hum.
+    static const reason file_not_found_reason = reason {"file not found"};
+    static const reason error_reason = reason {"error"}; // hum.
 
-    static constexpr reason segfault_reason = reason {"SIGSEGV"};
-    static constexpr reason abort_reason = reason {"SIGABRT"};
-    static constexpr reason floating_point_exception_reason = reason {"SIGFPE"};
-    static constexpr reason illegal_instruction_reason = reason {"SIGILL"};
-    static constexpr reason keyboard_interrupt_reason = reason {"SIGINT"};
-    static constexpr reason unknown_signal_reason = reason {"unknown signal"};
+    static const reason segfault_reason = reason {"SIGSEGV"};
+    static const reason abort_reason = reason {"SIGABRT"};
+    static const reason floating_point_exception_reason = reason {"SIGFPE"};
+    static const reason illegal_instruction_reason = reason {"SIGILL"};
+    static const reason keyboard_interrupt_reason = reason {"SIGINT"};
+    static const reason unknown_signal_reason = reason {"unknown signal"};
 
-    static constexpr reason unknown_reason = reason {"unknown cause"};
-    static constexpr reason should_not_happen_reason = reason {"that should not happen"};
+    static const reason unknown_reason = reason {"unknown cause"};
+    static const reason should_not_happen_reason = reason {"that should not happen"};
 
-    static constexpr reason lazy_programmer_reason = reason {"lazy programmer"};
+    static const reason lazy_programmer_reason = reason {"lazy programmer"};
   } // namespace r
 } // namespace neam
 

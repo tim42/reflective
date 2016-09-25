@@ -1,9 +1,11 @@
 
 #include <fstream>
 #include <ctime>
+#include <set>
 
-#include <tools/logger/logger.hpp>
+#include "tools/logger/logger.hpp"
 #include "storage.hpp"
+#include "function_call.hpp"
 
 #include "persistence_metadata.hpp"
 #include "config.hpp"
@@ -12,15 +14,29 @@ using root_data = std::deque<neam::r::internal::data>;
 
 static root_data *root_ptr = nullptr;
 static neam::r::internal::data *global_ptr = nullptr;
-static thread_local neam::r::internal::thread_local_data *tl_ptr = nullptr;
+static std::set<neam::r::internal::thread_local_data *> tl_data_ptrs;
+static thread_local neam::r::internal::thread_local_data tl_data;
 
 static neam::r::internal::mutex_type internal_lock;
 
+neam::r::internal::thread_local_data::thread_local_data()
+{
+  tl_data_ptrs.emplace(this);
+}
+
+neam::r::internal::thread_local_data::~thread_local_data()
+{
+  tl_data_ptrs.erase(this);
+}
+
 neam::r::internal::thread_local_data *neam::r::internal::get_thread_data()
 {
-  if (!tl_ptr)
-    tl_ptr = new thread_local_data;
-  return tl_ptr;
+  return &tl_data;
+}
+
+std::set<neam::r::internal::thread_local_data *> &neam::r::internal::get_all_thread_data()
+{
+  return tl_data_ptrs;
 }
 
 neam::r::internal::data *neam::r::internal::get_global_data()
@@ -60,18 +76,18 @@ neam::r::internal::call_info_struct &neam::r::internal::_get_call_info_struct(co
     if (d == it.descr)
     {
       // set properties if not already present
-      if (!it.descr.pretty_name && d.pretty_name)
+      if (it.descr.pretty_name.empty() && !d.pretty_name.empty())
         it.descr.pretty_name = d.pretty_name;
-      if (!it.descr.name && d.name)
+      if (it.descr.name.empty() && !d.name.empty())
         it.descr.pretty_name = d.pretty_name;
-      if (!it.descr.file && d.file)
+      if (it.descr.file.empty() && !d.file.empty())
       {
         it.descr.file = d.file;
         it.descr.line = d.line;
       }
       if (!it.descr.key_hash && d.key_hash)
         it.descr.key_hash = d.key_hash;
-      if (!it.descr.key_name && d.key_name)
+      if (it.descr.key_name.empty() && !d.key_name.empty())
         it.descr.key_hash = d.key_hash;
       // done !
       return it;
@@ -80,7 +96,7 @@ neam::r::internal::call_info_struct &neam::r::internal::_get_call_info_struct(co
   }
 
   // before creating it, check that the descriptor is a valid one
-  if (!d.key_name && (!d.key_hash || ((d.key_hash & 0x01) != 0)))
+  if (d.key_name.empty() && (!d.key_hash || ((d.key_hash & 0x01) != 0)))
     throw std::runtime_error("reflective: invalid func_descriptor structure when registering a new call_info_struct: no key_name or no unique key_hash");
 
   // nothing found: create it
@@ -106,18 +122,18 @@ neam::r::internal::call_info_struct *neam::r::internal::_get_call_info_struct_se
     if (d == it.descr)
     {
       // set properties if not already present
-      if (!it.descr.pretty_name && d.pretty_name)
+      if (it.descr.pretty_name.empty() && !d.pretty_name.empty())
         it.descr.pretty_name = d.pretty_name;
-      if (!it.descr.name && d.name)
+      if (it.descr.name.empty() && !d.name.empty())
         it.descr.pretty_name = d.pretty_name;
-      if (!it.descr.file && d.file)
+      if (it.descr.file.empty() && !d.file.empty())
       {
         it.descr.file = d.file;
         it.descr.line = d.line;
       }
       if (!it.descr.key_hash && d.key_hash)
         it.descr.key_hash = d.key_hash;
-      if (!it.descr.key_name && d.key_name)
+      if (it.descr.key_name.empty() && !d.key_name.empty())
         it.descr.key_hash = d.key_hash;
       // done !
       return &it;
@@ -126,7 +142,6 @@ neam::r::internal::call_info_struct *neam::r::internal::_get_call_info_struct_se
   }
   return nullptr;
 }
-
 
 neam::r::internal::call_info_struct &neam::r::internal::get_call_info_struct_at_index(long int index)
 {
@@ -140,18 +155,46 @@ neam::r::internal::call_info_struct &neam::r::internal::get_call_info_struct_at_
   return global->func_info[index];
 }
 
+void neam::r::internal::cleanup_reflective_data()
+{
+  // begin with the current thread (we may crash on some other thread)
+  while (get_thread_data()->top)
+  {
+    get_thread_data()->top->~function_call();
+  }
+
+  for (thread_local_data *it : tl_data_ptrs)
+  {
+    while (it->top)
+    {
+      it->top->~function_call();
+    }
+  }
+}
+
 void neam::r::sync_data_to_disk(const std::string &file)
 {
   std::lock_guard<neam::r::internal::mutex_type> _u0(internal_lock);
   neam::cr::raw_data serialized_data;
 
-  if (conf::use_json_backend)
-    serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::json>(root_ptr);
-  else
-    serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::neam>(root_ptr);
+  if (root_ptr == nullptr)
+  {
+    neam::cr::out.warning() << LOGGER_INFO << "Empty data, will not overwrite/create '" << file << "'" << std::endl;
+    return;
+  }
+
+  serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::neam>(root_ptr);
+
+  if (!serialized_data.size)
+  {
+    neam::cr::out.warning() << LOGGER_INFO << "Empty data, will not overwrite/create '" << file << "'" << std::endl;
+    return;
+  }
 
   std::ofstream of(file);
   of.write((const char *)serialized_data.data, serialized_data.size);
+  of.flush();
+  of.close();
 
   neam::cr::out.debug() << LOGGER_INFO << "Wrote '" << file << "'" << std::endl;
 }
@@ -194,10 +237,7 @@ bool neam::r::load_data_from_disk(const std::string &file)
   serialized_data.data = (int8_t *)memory;
   serialized_data.size = size;
 
-  if (conf::use_json_backend)
-    root_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::json, root_data>(serialized_data);
-  else
-    root_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::neam, root_data>(serialized_data);
+  root_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::neam, root_data>(serialized_data);
 
   delete [] memory;
 

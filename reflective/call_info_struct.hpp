@@ -27,7 +27,7 @@
 # define __N_54570708560285988_386345818__CALL_STRUCT_HPP__
 
 #include <cstdint>
-#include <vector>
+#include <deque>
 #include <map>
 
 #include "reason.hpp"
@@ -62,7 +62,9 @@ namespace neam
         double average_global_time = 0; ///< \brief The average time consumed by the whole function call (including all its children)
         size_t average_global_time_count = 0; ///< \brief Number of time the global_time has been monitored
 
-        std::vector<reason> fails = std::vector<reason>(); ///< \brief Holds all the past fails reasons
+        std::deque<reason> fails = std::deque<reason>(); ///< \brief Holds all the past fails reasons
+
+        std::map<std::string, std::deque<reason>> reports = decltype(reports)(); /// \brief Hold reports
 
         // GCC does not like std::map<std::string, measure_point_entry> measure_points = std::map<std::string, measure_point_entry>()
         std::map<std::string, measure_point_entry> measure_points = decltype(measure_points)(); /// \brief Holds informations about measure points

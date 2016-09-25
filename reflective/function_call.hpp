@@ -131,6 +131,11 @@ namespace neam
         /// \brief Report a failure
         void fail(const reason &rsn);
 
+        /// \brief Report something (warning, info, status, ...)
+        /// Reports are a bit slower than fails
+        /// \note If enabled in the config, reports may be printed on the console
+        void report(const std::string &mode, const reason &rsn);
+
         /// \brief Allow to put fail calls into return statements (or possibly into throw statements)
         template<typename Ret>
         inline Ret fail(const reason &rsn, Ret r)
@@ -140,7 +145,7 @@ namespace neam
         }
 
         /// \brief Return a contextualized introspect object
-        /// If you want stats, its this way
+        /// If you want stats, it's this way
         introspect get_introspect() const;
 
         // // conditional // //
@@ -185,6 +190,8 @@ namespace neam
         internal::stack_entry *se = nullptr;
         bool self_time_monitoring = conf::monitor_self_time;
         bool global_time_monitoring = conf::monitor_global_time;
+
+        bool has_exception = false; // has been constructed when an exception was active
 
         friend class measure_point;
     };

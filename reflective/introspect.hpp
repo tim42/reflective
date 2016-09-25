@@ -168,19 +168,16 @@ namespace neam
         }
 
         /// \brief Return the pretty name (if available, else, fall back to the crappy name)
-        /// DO NOT DELETE / FREE the returned pointer
-        const char *get_pretty_name() const
+        const std::string &get_pretty_name() const
         {
-          if (call_info.descr.pretty_name)
+          if (!call_info.descr.pretty_name.empty())
             return call_info.descr.pretty_name;
           return call_info.descr.name;
         }
 
         /// \brief Return the file
         /// \see get_line()
-        /// \note could be nullptr if nothing is stored
-        /// DO NOT DELETE / FREE the returned pointer
-        const char *get_file() const
+        const std::string &get_file() const
         {
           return call_info.descr.file;
         }
@@ -193,18 +190,15 @@ namespace neam
         }
 
         /// \brief Return the user-defined name (short-hand name)
-        /// DO NOT DELETE / FREE the returned pointer
         /// \see get_pretty_name()
         /// \see set_name()
-        const char *get_name() const
+        const std::string &get_name() const
         {
           return call_info.descr.name;
         }
 
         /// \brief Set the shorthand name
-        /// \note please don't touch the pointer after
-        /// \note avoid using too much heap-allocated strings
-        void set_name(const char *name)
+        void set_name(const std::string &name)
         {
           call_info.descr.name = name;
         }

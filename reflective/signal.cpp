@@ -1,7 +1,7 @@
 
 #include <csignal>
-#include <tools/logger/logger.hpp>
-#include <tools/backtrace.hpp>
+#include "tools/logger/logger.hpp"
+#include "tools/backtrace.hpp"
 #include "signal.hpp"
 #include "storage.hpp"
 #include "config.hpp"
@@ -39,6 +39,15 @@ void neam::r::on_signal(int sig)
   {
     neam::cr::out.critical() << LOGGER_INFO << "could not report that I just died from a nasty signal, so here is a backtrace" << std::endl;
     neam::cr::print_callstack(100, 2);
+  }
+
+
+  if (conf::cleanup_on_crash)
+  {
+    // save (we may cause a crash later)
+    sync_data_to_disk(conf::out_file);
+
+    internal::cleanup_reflective_data();
   }
 
   // save

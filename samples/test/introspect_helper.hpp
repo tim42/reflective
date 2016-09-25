@@ -58,11 +58,11 @@ namespace sample
     if (vi.size())
     {
       std::cout << "  " << text;
-      std::set<const char *> names;
+      std::set<std::string> names;
       size_t line_count = 0;
       for (const neam::r::introspect &i : vi)
       {
-        const char *name = i.get_pretty_name();
+        const std::string &name = i.get_pretty_name();
         if (!names.count(name))
         {
           if (line_count > 5)
@@ -120,8 +120,8 @@ namespace sample
         if (last_error.size())
         {
           neam::r::reason r = last_error.back();
-          std::cout << "  last error: " << r.type << ": '" << (r.message ? r.message : "") << "'" << "\n"
-                    << "  | file: " << (r.file ? r.file : "[---]") << " line " << r.line << "\n"
+          std::cout << "  last error: " << r.type << ": '" << r.message << "'" << "\n"
+                    << "  | file: " << (r.file.size() ? r.file : "[---]") << " line " << r.line << "\n"
                     << "  | number of time reported: " << r.hit << "\n"
                     << "  |  from: " << std::put_time(std::localtime((long *)&r.initial_timestamp), "%F %T") << "\n";
           std::cout << "  |__to:   " << std::put_time(std::localtime((long *)&r.last_timestamp), "%F %T") << std::endl;

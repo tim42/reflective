@@ -28,6 +28,7 @@
 
 #include <deque>
 #include <mutex>
+#include <set>
 #include "stack_entry.hpp"
 #include "call_info_struct.hpp"
 #include "type.hpp"
@@ -43,6 +44,9 @@ namespace neam
   {
     class function_call;
 
+    /// \brief This is internal data. If you touch anything from here,
+    /// please expect reflective to either crash, be corrupted or simply doesn't
+    /// work correctly.
     namespace internal
     {
       /// \brief Holds some information about things that happen somewhere
@@ -82,6 +86,9 @@ namespace neam
       /// \brief This is a purely thread local thing
       struct thread_local_data
       {
+        thread_local_data();
+        ~thread_local_data();
+
         function_call *top = nullptr;
       };
 
@@ -89,6 +96,15 @@ namespace neam
       thread_local_data *get_thread_data();
       /// \brief Get the global data
       data *get_global_data();
+
+      /// \brief Return the local data from all threads
+      std::set<thread_local_data *> &get_all_thread_data();
+
+      /// \brief Cleanup currently active function_calls.
+      /// If you call it without exiting right after, you may crash or have corrupted
+      /// data. (in fact, you will crash as soon as any active function_call will be destructed)
+      /// You should also have found a way to stop any active thread.
+      void cleanup_reflective_data();
 
       /// \brief Do not use directly, please use get_call_info_struct() instead
       /// This version is the one that perform the search. get_call_info_struct() will look in a cache to see if the structure has already been found/created

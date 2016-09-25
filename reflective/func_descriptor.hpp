@@ -41,13 +41,13 @@ namespace neam
     /// This is used to store/retrieve information to/from the function DB
     struct func_descriptor
     {
-      const char *name = nullptr; ///< \brief User access name
-      const char *pretty_name = nullptr; ///< \brief print name
+      std::string name = std::string(); ///< \brief User access name
+      std::string pretty_name = std::string(); ///< \brief print name
 
-      const char *file = nullptr; ///< \brief The zip code
+      std::string file = std::string(); ///< \brief The zip code
       size_t line = 0; ///< \brief The line of the fiel
 
-      const char *key_name = nullptr; ///< \brief Used as unique ID to compare
+      std::string key_name = std::string(); ///< \brief Used as unique ID to compare
       uint32_t key_hash = 0; ///< \brief Used to fast, compare the unique ID
 
       /// \brief Comparison function
@@ -55,22 +55,18 @@ namespace neam
       {
         if (other.key_hash && this->key_hash && (this->key_hash & 0x1) == 0) // ultra fast hash/hash comparison
           return other.key_hash == this->key_hash; // The hash guaranteed to be unique if the first bit is not set.
-        if (other.key_name && this->key_name) // key/key comparison
+        if (!other.key_name.empty() && !this->key_name.empty()) // key/key comparison
         {
-          if (other.key_hash && this->key_hash && other.key_hash != this->key_hash) // the hash mismatch = no the same key_name
+          if (other.key_hash && this->key_hash && other.key_hash != this->key_hash) // hash mismatch -> not the same key_name
             return false;
-          return !strcmp(other.key_name, this->key_name);
+          return other.key_name == this->key_name;
         }
 
-        if (other.file && this->file && other.line && this->line)
-          return other.line == this->line && !strcmp(other.file, other.file);
+        if (!other.file.empty() && !this->file.empty() && other.line && this->line)
+          return other.line == this->line && other.file == this->file;
 
         // non-unique comparisons
-        if (this->pretty_name && other.pretty_name) // non-unique
-          return !strcmp(other.pretty_name, this->pretty_name);
-        if (this->name && other.name) // slower, non-unique...
-          return !strcmp(other.name, this->name);
-        return false; // Well...
+        return other.pretty_name == this->pretty_name && other.name == this->name;
       }
 
       /// \brief Comparison operator
