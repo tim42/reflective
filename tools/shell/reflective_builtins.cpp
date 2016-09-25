@@ -367,12 +367,13 @@ void info_print_file_info(const neam::r::file_info &info, bool full_listing, std
 
 void info_print_introspect_info(neam::r::introspect &info, bool full_listing, std::iostream &ios)
 {
+  const size_t lcount = neam::r::get_launch_count() - 1;
   ios << "pretty name: " << info.get_pretty_name() << '\n'
       << "usual name: " << info.get_name() << '\n'
+      << "number of call (per-launch average): " << (info.get_call_count() / float(lcount)) << '\n'
       << "is contextualized: " << std::boolalpha << info.is_contextual() << '\n';
-  if (info.get_file())
+  if (!info.get_file().empty())
     ios << "file: " << info.get_file() << ": " << info.get_line() << '\n';
-  const size_t lcount = neam::r::get_launch_count() - 1;
   if (info.get_average_duration_count())
   {
     auto tm = get_time(info.get_average_duration());
@@ -445,7 +446,7 @@ void info_print_introspect_info(neam::r::introspect &info, bool full_listing, st
       ios << "  " << it.get_pretty_name() << '\n';
   }
 
-  ios << "number of failures: " << info.get_failure_count() << " (ratio: " << std::setprecision(3) << info.get_failure_ratio() << "%)\n";
+  ios << "number of failures: " << info.get_failure_count() << " (ratio: " << std::setprecision(3) << (info.get_failure_ratio() * 100) << "%)\n";
 }
 
 // can't do otherwise: I cannot construct "empty" introspects.
@@ -454,7 +455,16 @@ neam::r::introspect info_get_introspect(bool global, const std::string &name)
   if (name.empty())
   {
     if (rmgr->get_top_introspect())
-      return *rmgr->get_top_introspect();
+    {
+      if (!global)
+        return *rmgr->get_top_introspect();
+      else
+      {
+        neam::r::introspect ret = (*rmgr->get_top_introspect());
+        ret.remove_context();
+        return ret;
+      }
+    }
     else
       throw std::runtime_error("there's no current function");
   }
@@ -516,8 +526,8 @@ void neam::r::shell::blt_info(neam::r::shell::shell &sh)
             }
             for (const neam::r::reason & r : errlist)
             {
-              streamp[stream::stdout] << "  " << r.type << ": '" << (r.message ? r.message : "") << "'" << "\n"
-              << "  | file: " << (r.file ? r.file : "[---]") << " line " << r.line << "\n"
+              streamp[stream::stdout] << "  " << r.type << ": '" << r.message << "'" << "\n"
+              << "  | file: " << (r.file.size() ? r.file : "[---]") << " line " << r.line << "\n"
               << "  |" << (all_l ? ' ' : '_') << "number of time reported: " << r.hit << "\n";
               if (all_l)
               {

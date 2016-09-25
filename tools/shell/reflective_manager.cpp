@@ -41,12 +41,12 @@ void neam::r::manager::load_data()
       }
 
       // create/update the common_path
-      if (it.get_file() && !common_path_init)
+      if (!it.get_file().empty() && !common_path_init)
       {
         common_path = it.get_file();
         common_path_init = true;
       }
-      else if (it.get_file())
+      else if (!it.get_file().empty())
       {
         std::string file = it.get_file();
         for (size_t i = 0, l = std::min(common_path.size(), file.size()); i < l; ++i)
@@ -60,9 +60,9 @@ void neam::r::manager::load_data()
       }
 
       // compile informations
-      file_info &nfo = temp_per_file_info[it.get_file() ? it.get_file() : "/:orphan"];
+      file_info &nfo = temp_per_file_info[it.get_file().size() ? it.get_file() : "/:orphan"];
 
-      nfo.path = it.get_file() ? it.get_file() : "/:orphan";
+      nfo.path = it.get_file().size() ? it.get_file() : "/:orphan";
       nfo.hit_count += it.get_call_count();
       nfo.error_count += it.get_failure_count();
       nfo.functions.push_back(it);
@@ -103,7 +103,7 @@ void neam::r::manager::load_data()
     auto tm_self = get_time(it.second.average_self_time * float(it.second.hit_count / lcount));
     auto tm_gbl = get_time(it.second.average_global_time * float(it.second.hit_count / lcount));
     std::cout << "  --  " << std::setw(60) << std::left << it.second.path << " [self: ~" << int(tm_self.first) << tm_self.second << "s]" << std::endl;
-    per_file_info[it.second.path] = it.second;
+    per_file_info["/" + it.second.path] = it.second;
   }
 }
 

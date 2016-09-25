@@ -48,12 +48,12 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
   {
     // create the label
     std::string label = it.first.type;
-    if (it.first.message)
+    if (!it.first.message.empty())
     {
       label += "\n";
       label += it.first.message;
     }
-//     if (it.first.file)
+//     if (!it.first.file.empty())
 //     {
 //       label += "\n";
 //       label += it.first.file;
@@ -82,7 +82,7 @@ bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::intro
     }
 
     // Append the info string (if any)
-    if (it.second.get_file())
+    if (!it.second.get_file().empty())
     {
       str += "\n";
       str += it.second.get_file();
@@ -128,7 +128,6 @@ void neam::r::callgraph_to_dot::walk_get_max(neam::r::introspect &root)
   for (neam::r::introspect &callee : callees)
     walk_get_max(callee);
 }
-
 // walk a single root and print the graph
 // NOTE: this is recursive
 // This is not the best code I have ever written, but it works.
@@ -196,6 +195,13 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
     if (rsn.empty())
       return;
 
+    if (root.get_failure_ratio())
+    {
+      if (trace_full_error_path)
+        error_factor += root.get_failure_ratio();
+      insignificant = false;
+    }
+
     idx = get_idx_for_introspect(root);
 
     if (introspect_errors.count(idx))
@@ -214,13 +220,6 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
 
     for (auto & r : rsn_map)
       output_reason(os, idx, r.second);
-
-    if (root.get_failure_ratio())
-    {
-      if (trace_full_error_path)
-        error_factor += root.get_failure_ratio();
-      insignificant = false;
-    }
 
     // update the box of the function
     os << "  N" << idx << " [penwidth=3;color=\"#"

@@ -9,6 +9,8 @@
 #include <reflective/reflective.hpp>
 #include <reflective/signal.hpp>
 #include <tools/logger/logger.hpp>
+#include <tools/debug/assert.hpp>  // for the integration with neam::debug::*
+#include <tools/debug/unix_errors.hpp>  // for the integration with neam::debug::*
 #include "introspect_helper.hpp"
 
 class s
@@ -45,21 +47,24 @@ class s
       neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(s::f));
 
       // randomly make the prog segfault-
-      if (rand() % 100000 < 10)
+      if (rand() % 100000 < 10000)
       {
         neam::cr::out.warning() << LOGGER_INFO << "random crash spotted !" << std::endl;
-        if (rand() % 2)
+        if (rand() % 2 == 5)
         {
           volatile int *ptr = nullptr;
           *ptr = 0;
         }
         else
         {
-          abort();
+          std::vector<int> vct;
+          vct.at(50) = 1;
         }
       }
     }
 };
+
+static bool xfirst = false;
 
 void fnc()
 {
@@ -77,6 +82,16 @@ void fnc()
       });
 
   lol.f();
+
+  if (!xfirst)
+  {
+    xfirst = true;
+    try
+    {
+      neam::debug::on_error<neam::debug::errors::unix_errors>::n_assert(false == true, "wow, I don't understand what failed here...");
+    }
+    catch (...) {}
+  }
 }
 
 
@@ -86,6 +101,7 @@ int main(int /*argc*/, char **/*argv*/)
   neam::r::conf::monitor_global_time = true;
   neam::r::conf::monitor_self_time = true;
   neam::r::conf::out_file = "./sample.nr";
+  neam::r::conf::watch_uncaught_exceptions = true;
 
   // some signal handlers
   neam::r::install_default_signal_handler({SIGABRT, SIGSEGV, SIGFPE, SIGINT});
@@ -126,7 +142,13 @@ int main(int /*argc*/, char **/*argv*/)
 
   lol.d();
 
-  for (volatile size_t j = 0; j < 10000; ++j)
-    fnc();
+  try
+  {
+    for (volatile size_t j = 0; j < 10000; ++j)
+    {
+      fnc();
+    }
+  }
+  catch (...) {}
   return 0;
 }

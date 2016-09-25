@@ -26,6 +26,7 @@
 #ifndef __N_20383540332043849254_1297765537__DATA_STRUCTURE_HPP__
 # define __N_20383540332043849254_1297765537__DATA_STRUCTURE_HPP__
 
+#include <vector>
 #include <boost/variant.hpp>
 
 namespace neam

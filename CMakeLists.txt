@@ -79,7 +79,7 @@ endif()
 
 # build the samples
 if (${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
-  add_subdirectory(samples/test)
+  add_subdirectory(samples)
 endif()
 
 # build the tools
