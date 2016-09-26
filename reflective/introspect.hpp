@@ -51,7 +51,7 @@ namespace neam
     {
       private:
         introspect(internal::call_info_struct &_call_info, size_t index, internal::stack_entry *_context)
-          : call_info_index(index), call_info(_call_info), global(internal::get_global_data()), context(_context)
+          : call_info_index(index), call_info(&_call_info), global(internal::get_global_data()), context(_context)
         {
         }
 
@@ -62,7 +62,7 @@ namespace neam
         /// \throw std::runtime_error if the function is not found
         template<typename FuncType, FuncType Func>
         introspect(const func_descriptor &d, neam::embed::embed<FuncType, Func>)
-          : call_info_index(0), call_info(internal::get_call_info_struct<FuncType, Func>(d, &call_info_index, true)),
+          : call_info_index(0), call_info(&internal::get_call_info_struct<FuncType, Func>(d, &call_info_index, true)),
             global(internal::get_global_data())
         {
         }
@@ -72,7 +72,7 @@ namespace neam
         /// \throw std::runtime_error if the function is not found
         template<typename FuncType>
         introspect(const func_descriptor &d, internal::type<FuncType>)
-          : call_info_index(0), call_info(internal::get_call_info_struct<FuncType>(d, &call_info_index, true)),
+          : call_info_index(0), call_info(&internal::get_call_info_struct<FuncType>(d, &call_info_index, true)),
             global(internal::get_global_data())
         {
         }
@@ -131,7 +131,7 @@ namespace neam
         /// \brief Return a copy without the context
         introspect copy_without_context() const
         {
-          return introspect(call_info, call_info_index, nullptr);
+          return introspect(*call_info, call_info_index, nullptr);
         }
 
         /// \brief Set the context for this introspect object
@@ -148,7 +148,7 @@ namespace neam
         {
           if (context)
             return context->hit_count >= 5;
-          return call_info.call_count >= 5;
+          return call_info->call_count >= 5;
         }
 
         /// \brief Return the number of time the function has been called
@@ -156,7 +156,7 @@ namespace neam
         {
           if (context)
             return context->hit_count;
-          return call_info.call_count;
+          return call_info->call_count;
         }
 
         /// \brief Return the number of time the function has failed
@@ -164,29 +164,29 @@ namespace neam
         {
           if (context)
             return context->fail_count;
-          return call_info.fail_count;
+          return call_info->fail_count;
         }
 
         /// \brief Return the pretty name (if available, else, fall back to the crappy name)
         const std::string &get_pretty_name() const
         {
-          if (!call_info.descr.pretty_name.empty())
-            return call_info.descr.pretty_name;
-          return call_info.descr.name;
+          if (!call_info->descr.pretty_name.empty())
+            return call_info->descr.pretty_name;
+          return call_info->descr.name;
         }
 
         /// \brief Return the file
         /// \see get_line()
         const std::string &get_file() const
         {
-          return call_info.descr.file;
+          return call_info->descr.file;
         }
 
         /// \brief Return the line
         /// \see get_file()
         size_t get_line() const
         {
-          return call_info.descr.line;
+          return call_info->descr.line;
         }
 
         /// \brief Return the user-defined name (short-hand name)
@@ -194,27 +194,27 @@ namespace neam
         /// \see set_name()
         const std::string &get_name() const
         {
-          return call_info.descr.name;
+          return call_info->descr.name;
         }
 
         /// \brief Set the shorthand name
         void set_name(const std::string &name)
         {
-          call_info.descr.name = name;
+          call_info->descr.name = name;
         }
 
         /// \brief Return the function descriptor of the function. You could copy it but NEVER, NEVER change it.
         const func_descriptor &get_function_descriptor() const
         {
-          return call_info.descr;
+          return call_info->descr;
         }
 
         /// \brief get a measure point
         /// \note If no measure point is found, it returns nullptr
         const measure_point_entry *get_measure_point_entry(const std::string &name) const
         {
-          const auto &it = call_info.measure_points.find(name);
-          if (it == call_info.measure_points.end())
+          const auto &it = call_info->measure_points.find(name);
+          if (it == call_info->measure_points.end())
             return nullptr;
           return &it->second;
         }
@@ -222,7 +222,7 @@ namespace neam
         /// \brief Return the whole measure point map
         const std::map<std::string, measure_point_entry> &get_measure_point_map() const
         {
-          return call_info.measure_points;
+          return call_info->measure_points;
         }
 
         /// \brief return the duration progression of the self time
@@ -250,7 +250,7 @@ namespace neam
         {
           if (context)
             return float(context->fail_count) / float(context->hit_count);
-          return float(call_info.fail_count) / float(call_info.call_count);
+          return float(call_info->fail_count) / float(call_info->call_count);
         }
 
         /// \brief Return the average duration of the function (and only that function, without the time consumed by sub calls)
@@ -258,28 +258,28 @@ namespace neam
         {
           if (context)
             return context->average_self_time;
-          return call_info.average_self_time;
+          return call_info->average_self_time;
         }
         /// \brief Return the number of time the self_duration has been monitored
         inline float get_average_self_duration_count() const
         {
           if (context)
             return context->average_self_time_count;
-          return call_info.average_self_time_count;
+          return call_info->average_self_time_count;
         }
         /// \brief Return the average duration of the function (including all sub calls (functions called into this function)
         inline float get_average_duration() const
         {
           if (context)
             return context->average_global_time;
-          return call_info.average_global_time;
+          return call_info->average_global_time;
         }
         /// \brief Return the number of time the average_duration has been monitored
         inline float get_average_duration_count() const
         {
           if (context)
             return context->average_global_time_count;
-          return call_info.average_global_time_count;
+          return call_info->average_global_time_count;
         }
 
         /// \brief Return the last \e count errors for the function, most recent last
@@ -315,19 +315,19 @@ namespace neam
         bool operator == (const introspect &o) const
         {
           return o.context == this->context
-                 && &o.call_info == &this->call_info;
+                 && o.call_info == this->call_info;
         }
 
         /// \brief inequality operator
         bool operator != (const introspect &o) const
         {
           return o.context != this->context
-                 || &o.call_info != &this->call_info;
+                 || o.call_info != this->call_info;
         }
 
       private:
         size_t call_info_index;
-        internal::call_info_struct &call_info;
+        internal::call_info_struct *call_info;
         internal::data *global;
 
         internal::stack_entry *context = nullptr;

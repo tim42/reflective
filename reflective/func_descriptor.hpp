@@ -66,7 +66,12 @@ namespace neam
           return other.line == this->line && other.file == this->file;
 
         // non-unique comparisons
-        return other.pretty_name == this->pretty_name && other.name == this->name;
+        if (!other.pretty_name.empty() && !this->pretty_name.empty())
+          return other.pretty_name == this->pretty_name;
+        if (!other.name.empty() && !this->name.empty())
+          return other.name == this->name;
+
+        return false;
       }
 
       /// \brief Comparison operator

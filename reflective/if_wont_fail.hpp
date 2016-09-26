@@ -52,9 +52,9 @@ namespace neam
         public:
           if_wont_fail(size_t _count, float _ratio, FuncType _func) : count(_count), ratio(_ratio), func(_func) {}
 
-          /// \brief Change the minimum ratio
+          /// \brief Change the maximum ratio
           if_wont_fail &set_max_ratio(float _max_ratio) { max_ratio = _max_ratio; return *this; }
-          /// \brief Change the minimum ratio
+          /// \brief Change the minimum call count (to account the failure ratio)
           if_wont_fail &set_min_count(float _max_ratio) { max_ratio = _max_ratio; return *this; }
 
           /// \brief Conditionally call the function/method/...

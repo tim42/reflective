@@ -79,7 +79,7 @@ neam::r::internal::call_info_struct &neam::r::internal::_get_call_info_struct(co
       if (it.descr.pretty_name.empty() && !d.pretty_name.empty())
         it.descr.pretty_name = d.pretty_name;
       if (it.descr.name.empty() && !d.name.empty())
-        it.descr.pretty_name = d.pretty_name;
+        it.descr.name = d.name;
       if (it.descr.file.empty() && !d.file.empty())
       {
         it.descr.file = d.file;
@@ -121,21 +121,7 @@ neam::r::internal::call_info_struct *neam::r::internal::_get_call_info_struct_se
     // NOTE: the first bit tells if the hash comes from a string (in that case we have to strcmp) or from a pointer
     if (d == it.descr)
     {
-      // set properties if not already present
-      if (it.descr.pretty_name.empty() && !d.pretty_name.empty())
-        it.descr.pretty_name = d.pretty_name;
-      if (it.descr.name.empty() && !d.name.empty())
-        it.descr.pretty_name = d.pretty_name;
-      if (it.descr.file.empty() && !d.file.empty())
-      {
-        it.descr.file = d.file;
-        it.descr.line = d.line;
-      }
-      if (!it.descr.key_hash && d.key_hash)
-        it.descr.key_hash = d.key_hash;
-      if (it.descr.key_name.empty() && !d.key_name.empty())
-        it.descr.key_hash = d.key_hash;
-      // done !
+      // found !
       return &it;
     }
     ++index;

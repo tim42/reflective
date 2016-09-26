@@ -1,3 +1,4 @@
+
 //
 // file : my_class.hpp
 // in : file:///home/tim/projects/reflective/samples/advanced/my_class.hpp

@@ -156,16 +156,16 @@ namespace neam
         /// \note It has a "training time", it will return true until a certain amount of call has been reached. This amount can be set the with returned object.
         /// \note You can change the maximum ratio by setting it in the returned object.
         template<typename FuncType>
-        internal::if_wont_fail<FuncType> if_wont_fail(const char *name, FuncType func) const
+        internal::if_wont_fail<FuncType> if_wont_fail(const std::string &name, FuncType func) const
         {
-          size_t o_call_info_index;
-          internal::call_info_struct &o_call_info = internal::get_call_info_struct<void>(func_descriptor {name}, &o_call_info_index);
+          size_t o_call_info_index = 0;
+          internal::call_info_struct &o_call_info = internal::get_call_info_struct<void>(func_descriptor {name}, &o_call_info_index, true);
           internal::stack_entry *o_se = nullptr;
 
           float ratio = 0.f;
           size_t count = 0;
 
-          if (se && (o_se = se->get_children_stack_entry(o_call_info_index))) // stack-based failure rate
+          if (se && (o_se = se->get_children_stack_entry(o_call_info_index)) && o_se->hit_count > 1) // stack-based failure rate
           {
             ratio = float(o_se->fail_count) / float(o_se->hit_count);
             count = o_se->hit_count;
@@ -211,12 +211,12 @@ namespace neam
 /// \brief Use this with a method or a function that you monitor with N_PRETTY_FUNCTION_INFO
 /// \param n is a C string. Better if the string is known at compile-time.
 /// \param f is a method or a function with the full hierarchy of namespaces
-#define N_FUNCTION(f)    neam::r::func_descriptor {N_EXP_STRINGIFY(f), nullptr, nullptr, 0, nullptr, 0}, neam::embed::embed<decltype(&f), &f>()
+#define N_FUNCTION(f)    neam::r::func_descriptor {N_EXP_STRINGIFY(f), std::string(), std::string(), 0, std::string(), 0}, neam::embed::embed<decltype(&f), &f>()
 
 /// \brief
 /// \param n is a C string. Better if the string is known at compile-time.
 /// \param f is a method or a function with the full hierarchy of namespaces
-#define N_NAME(n, f)    neam::r::func_descriptor {N_EXP_STRINGIFY(f), nullptr, nullptr, 0, nullptr, 0}, neam::r::internal::type<decltype(&f)>()
+#define N_NAME(n, f)    neam::r::func_descriptor {N_EXP_STRINGIFY(f), std::string(), std::string(), 0, std::string(), 0}, neam::r::internal::type<decltype(&f)>()
 
 #if 0
 /// \brief Workaround some C++ limitations. Also provide what is necessary for the name, hash and func parameters of neam::r::function_call()

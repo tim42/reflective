@@ -19,11 +19,11 @@ neam::r::introspect &neam::r::introspect::operator=(const neam::r::introspect &o
 
 void neam::r::introspect::reset()
 {
-  call_info.fail_count = 0;
-  call_info.call_count = 1;
-  call_info.average_global_time_count = call_info.average_global_time_count ? 1 : 0;
-  call_info.average_self_time_count = call_info.average_self_time_count ? 1 : 0;
-  call_info.fails.clear();
+  call_info->fail_count = 0;
+  call_info->call_count = 1;
+  call_info->average_global_time_count = call_info->average_global_time_count ? 1 : 0;
+  call_info->average_self_time_count = call_info->average_self_time_count ? 1 : 0;
+  call_info->fails.clear();
 
   // reset in all the callgraph entries
   std::lock_guard<internal::mutex_type> _u0(global->lock); // lock 'cause we do a lot of nasty things.
@@ -142,11 +142,11 @@ bool neam::r::introspect::set_context(const neam::r::introspect &caller)
 std::vector<neam::r::reason> neam::r::introspect::get_failure_reasons(size_t count)
 {
   std::vector<neam::r::reason> ret;
-  count = std::min(count, call_info.fails.size());
+  count = std::min(count, call_info->fails.size());
   ret.reserve(count);
 
-  for (size_t i = call_info.fails.size() - count; i < call_info.fails.size(); ++i)
-    ret.push_back(call_info.fails[i]);
+  for (size_t i = call_info->fails.size() - count; i < call_info->fails.size(); ++i)
+    ret.push_back(call_info->fails[i]);
 
   return ret;
 }

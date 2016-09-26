@@ -141,7 +141,7 @@ namespace neam
         {
           ret = _get_call_info_struct_search_only(d, index);
           if (!ret)
-            throw std::runtime_error("reflective: could not found the requested call_info_struct");
+            throw std::runtime_error("reflective: could not find the requested call_info_struct");
         }
         if (_index)
           *_index = index;
@@ -156,7 +156,7 @@ namespace neam
       {
         static long index = -1; // This is an invalid index
 
-        if (index != -1 && !std::is_same<FuncType, void>::value)
+        if (index != -1)
         {
           if (_index)
             *_index = index;
@@ -173,7 +173,7 @@ namespace neam
         {
           ret = _get_call_info_struct_search_only(d, index);
           if (!ret)
-            throw std::runtime_error("reflective: could not found the requested call_info_struct");
+            throw std::runtime_error("reflective: could not find the requested call_info_struct [slow/way]");
         }
         if (_index)
           *_index = index;
