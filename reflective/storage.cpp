@@ -2,6 +2,7 @@
 #include <fstream>
 #include <ctime>
 #include <set>
+#include <algorithm>
 
 #include "tools/logger/logger.hpp"
 #include "storage.hpp"
@@ -177,7 +178,7 @@ void neam::r::sync_data_to_disk(const std::string &file)
     return;
   }
 
-  std::ofstream of(file);
+  std::ofstream of(file, std::ios_base::binary);
   of.write((const char *)serialized_data.data, serialized_data.size);
   of.flush();
   of.close();
@@ -195,7 +196,7 @@ bool neam::r::load_data_from_disk(const std::string &file)
   global_ptr = nullptr;
 
   std::string contents;
-  std::ifstream inf(file);
+  std::ifstream inf(file, std::ios_base::binary);
 
   if (!inf)
   {
@@ -236,6 +237,9 @@ bool neam::r::load_data_from_disk(const std::string &file)
     }
     for (internal::data &data_it : *root_ptr)
     {
+#ifdef _MSC_VER
+      data_it.post_deserialization();
+#endif
       std::lock_guard<internal::mutex_type> _u0(data_it.lock); // lock 'cause we do a lot of nasty things.
 
       // walk the whole callgraph to set correct ids

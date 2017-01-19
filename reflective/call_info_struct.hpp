@@ -50,6 +50,9 @@ namespace neam
       /// \brief Hold some information about a called function
       struct call_info_struct
       {
+#ifdef _MSC_VER
+        call_info_struct(const func_descriptor& fd) : descr(fd) {}
+#endif
         func_descriptor descr; ///< \brief The function descriptor object
 
         // ----- //

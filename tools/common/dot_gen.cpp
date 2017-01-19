@@ -3,6 +3,9 @@
 #include <iomanip>
 #include <iostream>
 #include <set>
+#include <string>
+#include <cctype>
+#include <algorithm>
 #include "dot_gen.hpp"
 
 bool neam::r::callgraph_to_dot::write_to_stream(std::ostream &os, neam::r::introspect *root)
@@ -180,7 +183,7 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
         if (trace_full_error_path)
           error_factor += callee_error_factor;
 
-        os << "color=\"#" << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(callee_error_factor * 150. + 105.f), 255ul) << std::dec << "0000\";";
+        os << "color=\"#" << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(callee_error_factor * 150. + 105.f), size_t(255ul)) << std::dec << "0000\";";
       }
 
       os << "];\n";
@@ -223,7 +226,7 @@ void neam::r::callgraph_to_dot::walk_root(std::ostream &os, neam::r::introspect 
 
     // update the box of the function
     os << "  N" << idx << " [penwidth=3;color=\"#"
-       << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(root.copy_without_context().get_failure_ratio() * 150. + 105.f), 255ul) << std::dec << "0000\";]\n";
+       << std::hex << std::setw(2) << std::setfill('0') << std::min(size_t(root.copy_without_context().get_failure_ratio() * 150. + 105.f), size_t(255ul)) << std::dec << "0000\";]\n";
   }
 }
 

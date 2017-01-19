@@ -1,4 +1,6 @@
 
+#include <algorithm>
+
 #include "tools/logger/logger.hpp"
 #include "call_info_struct.hpp"
 #include "function_call.hpp"

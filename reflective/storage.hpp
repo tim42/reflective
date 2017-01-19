@@ -72,7 +72,9 @@ namespace neam
           std::string name;
           long timestamp;
 
+#ifndef _MSC_VER
         private:
+#endif
           /// \brief Called after the deserialization (thus the name)
           void post_deserialization()
           {

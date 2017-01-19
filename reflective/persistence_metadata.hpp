@@ -104,7 +104,7 @@ namespace neam
     NCRP_DECLARE_NAME(r__data, callgraph);
     NCRP_DECLARE_NAME(r__data, name);
     NCRP_DECLARE_NAME(r__data, timestamp);
-    template<typename Backend> class persistence::serializable<Backend, r::internal::data> : public persistence::constructible_serializable_object
+    template<typename Backend> class persistence::serializable<Backend, r::internal::data> : public persistence::serializable_object
     <
       Backend, // < the backend (here: all backends)
 
@@ -112,7 +112,7 @@ namespace neam
 
       // Embed in the template a call to the post-deserialization function
       // This function will be called just after the object has been deserialized
-      N_CALL_POST_FUNCTION(r::internal::data),
+      //N_CALL_POST_FUNCTION(r::internal::data),
 
       // simply list here the members you want to serialize / deserialize
       NCRP_NAMED_TYPED_OFFSET(r::internal::data, launch_count, names::r__data::launch_count),

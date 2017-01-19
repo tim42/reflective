@@ -123,8 +123,8 @@ namespace sample
           std::cout << "  last error: " << r.type << ": '" << r.message << "'" << "\n"
                     << "  | file: " << (r.file.size() ? r.file : "[---]") << " line " << r.line << "\n"
                     << "  | number of time reported: " << r.hit << "\n"
-                    << "  |  from: " << std::put_time(std::localtime((long *)&r.initial_timestamp), "%F %T") << "\n";
-          std::cout << "  |__to:   " << std::put_time(std::localtime((long *)&r.last_timestamp), "%F %T") << std::endl;
+                    << "  |  from: " << std::put_time(std::localtime((const time_t *)&r.initial_timestamp), "%F %T") << "\n";
+          std::cout << "  |__to:   " << std::put_time(std::localtime((const time_t *)&r.last_timestamp), "%F %T") << std::endl;
         }
       }
     }

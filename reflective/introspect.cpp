@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include "stack_entry.hpp"
 #include "introspect.hpp"
 

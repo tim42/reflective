@@ -1,5 +1,4 @@
 
-#include <unistd.h>
 #include <csignal>
 
 #include <reflective/reflective.hpp> // The reflective header

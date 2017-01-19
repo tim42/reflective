@@ -35,6 +35,15 @@ namespace neam
     /// \brief A failure reason
     struct reason
     {
+#ifdef _MSC_VER
+      reason() = default;
+      explicit reason(const std::string &_type, const std::string &_message = std::string(), const std::string &_file = std::string(), size_t _line = 0)
+       : type(_type), message(_message), file(_file), line(_line)
+      {}
+      explicit reason(const std::string &_type, const std::string &_message, const std::string &_file, size_t _line, size_t _hit, size_t _it, size_t _lt)
+       : type(_type), message(_message), file(_file), line(_line), hit(_hit), initial_timestamp(_it), last_timestamp(_lt)
+      {}
+   #endif
       std::string type = std::string();
       std::string message = std::string();
 

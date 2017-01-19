@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <ctime>
 #include <exception>
 #include "tools/logger/logger.hpp"

@@ -41,6 +41,11 @@ namespace neam
     /// This is used to store/retrieve information to/from the function DB
     struct func_descriptor
     {
+#ifdef _MSC_VER
+      func_descriptor(const std::string &_name, const std::string &_pretty_name = std::string(), const std::string &_file = std::string(), size_t _line = 0, const std::string &_key_name = std::string(), uint32_t _key_hash = 0)
+        : name(_name), pretty_name(_pretty_name), file(_file), line(_line), key_name(_key_name), key_hash(_key_hash)
+      {}
+#endif
       std::string name = std::string(); ///< \brief User access name
       std::string pretty_name = std::string(); ///< \brief print name
 

@@ -195,19 +195,26 @@ namespace neam
 
         friend class measure_point;
     };
-
+#ifdef _MSC_VER
+#define _R_PRETTY_FUNC __FUNCSIG__
+#else
+#define _R_PRETTY_FUNC __PRETTY_FUNCTION__
+#endif
 
 /// \brief Workaround some C++ limitations. Also provide what is necessary for the name, hash and func parameters of neam::r::function_call()
 /// \note Please provide the full hierarchy of namespaces if possible
 /// \param f is a method or a function with the full hierarchy of namespaces
-#define N_PRETTY_FUNCTION_INFO(f) neam::r::func_descriptor { N_EXP_STRINGIFY(f), __PRETTY_FUNCTION__, __FILE__, __LINE__, N__I__FNAME(f), neam::r::internal::generate_id(N__I__FNAME(f), &f)}, neam::embed::embed<decltype(&f), &f>()
+#define N_PRETTY_FUNCTION_INFO(f) neam::r::func_descriptor { N_EXP_STRINGIFY(f), _R_PRETTY_FUNC, __FILE__, __LINE__, N__I__FNAME(f), neam::r::internal::generate_id(N__I__FNAME(f), &f)}, neam::embed::embed<decltype(&f), &f>()
 
 /// \brief Use this is if you have to monitor constructors, destructors, lambdas, strange things and awkward moments
 /// \note Using this will work in every case (but could be a little bit slower than N_*FUNCTION_INFO as you don't have cache)
 /// \note Using this, you will not be able to use the function with if_wont_fail and introspecting that function will not be possible directly
 /// \param n is a C string. Better if the string is known at compile-time.
-#define N_PRETTY_NAME_INFO(n) neam::r::func_descriptor {n, __PRETTY_FUNCTION__, __FILE__, __LINE__, N__I__NNAME, neam::r::internal::hash_from_str(N__I__NNAME)}, neam::r::internal::type<neam::r::internal::file_type<neam::r::internal::hash_from_str(__FILE__), __LINE__>>()
-
+#ifdef _MSC_VER
+#define N_PRETTY_NAME_INFO(n) neam::r::func_descriptor {n, _R_PRETTY_FUNC, __FILE__, __LINE__, N__I__NNAME, neam::r::internal::hash_from_str(N__I__NNAME)}, neam::r::internal::type<neam::r::internal::file_type<__COUNTER__, __LINE__>>()
+#else
+#define N_PRETTY_NAME_INFO(n) neam::r::func_descriptor {n, _R_PRETTY_FUNC, __FILE__, __LINE__, N__I__NNAME, neam::r::internal::hash_from_str(N__I__NNAME)}, neam::r::internal::type<neam::r::internal::file_type<neam::r::internal::hash_from_str(__FILE__), __LINE__>>()
+#endif
 /// \brief Use this with a method or a function that you monitor with N_PRETTY_FUNCTION_INFO
 /// \param n is a C string. Better if the string is known at compile-time.
 /// \param f is a method or a function with the full hierarchy of namespaces
@@ -232,7 +239,7 @@ namespace neam
 /// \brief Use this is if everything else fails or gives awkward results
 /// \param n is a C string
 /// \note This should be your last resort as it is totally arbitrary
-#define N_PRETTY_ARBITRARY_INFO(n) neam::r::func_descriptor {n, __PRETTY_FUNCTION__, __FILE__, __LINE__, n, neam::r::internal::hash_from_str(n)}, neam::r::internal::type<void>()
+#define N_PRETTY_ARBITRARY_INFO(n) neam::r::func_descriptor {n, _R_PRETTY_FUNC, __FILE__, __LINE__, n, neam::r::internal::hash_from_str(n)}, neam::r::internal::type<void>()
 #endif
 
 #define N__I__FNAME(f)    __FILE__ ":" N_EXP_STRINGIFY(__LINE__) "#" N_EXP_STRINGIFY(f)

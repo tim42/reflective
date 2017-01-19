@@ -47,6 +47,9 @@ namespace neam
       /// \brief Hold an entry
       struct stack_entry
       {
+#ifdef _MSC_VER
+		  stack_entry(size_t _se, size_t _si, size_t _csi, size_t _p) : self_index(_se), stack_index(_si), call_structure_index(_csi), parent(_p) {}
+#endif
         const size_t self_index; ///< \brief Hold the index of the stack_entry structure
         const size_t stack_index; ///< \brief Hold the current stack index (index in the callgraph deque)
         const size_t call_structure_index; ///< \brief Holds the index of the call struct

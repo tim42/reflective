@@ -73,7 +73,10 @@ namespace neam
       /// \note This hash is quite fast AND \b NOT INTENDED TO BE SECURE. Its sole purpose is to allow a quite faster equality test for strings
       /// \note This hash is made to be run at build time (and all decent compiler will not execute it at runtime)
       /// \note This is C++14
-      constexpr inline uint32_t hash_from_str(const char *const string)
+#ifndef _MSC_VER
+      constexpr
+#endif
+      inline uint32_t hash_from_str(const char *const string)
       {
         const size_t len = neam::ct::safe_strlen(string);
         uint32_t hash = 0x005A55AA | ((len % 256) << 24); // first byte is (len % 255), and only the remaining 3 bytes are for the hash
@@ -95,7 +98,10 @@ namespace neam
       /// \brief Generate an id for a string / ptr
       template<typename Ret, typename... Args>
 #ifdef N_R_XBUILD_COMPAT
-      constexpr inline
+#ifndef _MSC_VER
+      constexpr
+#endif
+      inline
 #endif
       uint32_t generate_id(const char *const string, Ret (*ptr)(Args...))
       {
@@ -109,19 +115,28 @@ namespace neam
       }
       /// \brief Generate an id for a string / ptr
       template<typename Ret, typename Class, typename... Args>
-      constexpr inline uint32_t generate_id(const char *const string, Ret (Class::*)(Args...))
+#ifndef _MSC_VER
+      constexpr
+#endif
+      inline uint32_t generate_id(const char *const string, Ret (Class::*)(Args...))
       {
         return hash_from_str(string);
       }
 
       /// \brief Generate an id for a string / ptr
       template<typename Type>
-      constexpr inline uint32_t generate_id(const char *const string, Type)
+#ifndef _MSC_VER
+      constexpr
+#endif
+      inline uint32_t generate_id(const char *const string, Type)
       {
         return hash_from_str(string);
       }
       template<>
-      constexpr inline uint32_t generate_id<const char *>(const char *const, const char *const other_string)
+#ifndef _MSC_VER
+      constexpr
+#endif
+      inline uint32_t generate_id<const char *>(const char *const, const char *const other_string)
       {
         return hash_from_str(other_string);
       }
