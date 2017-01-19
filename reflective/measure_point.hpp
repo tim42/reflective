@@ -32,7 +32,8 @@ namespace neam
 {
   namespace r
   {
-    constexpr struct defer_start_t {} defer_start __attribute__((unused));
+    struct defer_start_t {};
+    constexpr static defer_start_t defer_start __attribute__((unused)) = defer_start_t();
 
     /// \brief Some additional, named, chrono information to a monitored function
     /// \note only a measure_point that has been started and stopped
