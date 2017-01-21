@@ -15,6 +15,7 @@ using root_data = std::deque<neam::r::internal::data>;
 
 static root_data *root_ptr = nullptr;
 static neam::r::internal::data *global_ptr = nullptr;
+
 static std::set<neam::r::internal::thread_local_data *> tl_data_ptrs;
 static thread_local neam::r::internal::thread_local_data tl_data;
 
@@ -22,11 +23,13 @@ static neam::r::internal::mutex_type internal_lock;
 
 neam::r::internal::thread_local_data::thread_local_data()
 {
+  std::lock_guard<neam::r::internal::mutex_type> _u0(internal_lock);
   tl_data_ptrs.emplace(this);
 }
 
 neam::r::internal::thread_local_data::~thread_local_data()
 {
+  std::lock_guard<neam::r::internal::mutex_type> _u0(internal_lock);
   tl_data_ptrs.erase(this);
 }
 
@@ -60,7 +63,6 @@ neam::r::internal::data *neam::r::internal::get_global_data()
   }
   return global_ptr;
 }
-
 
 neam::r::internal::call_info_struct &neam::r::internal::_get_call_info_struct(const func_descriptor &d, long &index)
 {
@@ -186,6 +188,22 @@ void neam::r::sync_data_to_disk(const std::string &file)
   neam::cr::out.debug() << LOGGER_INFO << "Wrote '" << file << "'" << std::endl;
 }
 
+std::string neam::r::get_data_as_json()
+{
+  std::lock_guard<neam::r::internal::mutex_type> _u0(internal_lock);
+  neam::cr::raw_data serialized_data;
+
+  if (root_ptr == nullptr)
+    return std::string();
+
+  serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::json>(root_ptr);
+
+  if (serialized_data.size <= 1)
+    return std::string();
+
+  return (const char *)(serialized_data.data);
+}
+
 bool neam::r::load_data_from_disk(const std::string &file)
 {
   if (root_ptr)
@@ -273,10 +291,10 @@ void neam::r::stash_current_data(const std::string &name)
   internal::get_global_data(); // init, if not already done
 
   // stash it !
-  global_ptr->name = name;
   global_ptr->timestamp = time(nullptr);
   root_ptr->push_back(internal::data());
   global_ptr = &root_ptr->back();
+  global_ptr->name = name;
 
   if (std::max(2l, conf::max_stash_count) < long(root_ptr->size()) && conf::max_stash_count >= 0)
     root_ptr->pop_front();

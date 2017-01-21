@@ -145,14 +145,17 @@ void neam::r::function_call::fail(const neam::r::reason &rsn)
     std::lock_guard<internal::mutex_type> _u0(global->lock);
 
     call_info.fail_count++;
-    if (call_info.fails.size() && call_info.fails.back() == rsn)
-    {
-      ++call_info.fails.back().hit;
-      call_info.fails.back().last_timestamp = ts;
-    }
-    else
-      call_info.fails.push_back(neam::r::reason {rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
   }
+
+  if (!se) return;
+
+  if (se->fails.size() && se->fails.back() == rsn)
+  {
+    ++se->fails.back().hit;
+    se->fails.back().last_timestamp = ts;
+  }
+  else
+    se->fails.push_back(neam::r::reason {rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
 }
 
 void neam::r::function_call::report(const std::string &mode, const neam::r::reason &rsn)
@@ -165,19 +168,52 @@ void neam::r::function_call::report(const std::string &mode, const neam::r::reas
   // Avoid huge reports if we always hit the same thing
   // We don't test the whole array 'cause we want to keep the ordering
   size_t ts = std::time(nullptr);
+
+  if (!se) return;
+
+  auto &vct = se->reports[mode];
+
+  if (vct.size() && vct.back() == rsn)
   {
-    std::lock_guard<internal::mutex_type> _u0(global->lock);
-
-    auto &vct = call_info.reports[mode];
-
-    if (vct.size() && vct.back() == rsn)
-    {
-      ++vct.back().hit;
-      vct.back().last_timestamp = ts;
-    }
-    else
-      vct.push_back(neam::r::reason {rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
+    ++vct.back().hit;
+    vct.back().last_timestamp = ts;
   }
+  else
+    vct.push_back(neam::r::reason {rsn.type, rsn.message, rsn.file, rsn.line, 1, ts, ts});
+}
+
+neam::r::sequence &neam::r::function_call::create_sequence(const std::string &name)
+{
+  // TODO(tim): fix the possible null se pointer
+  neam::r::sequence &ret = se->sequences[name];
+  ret.clear_sequence();
+  return ret;
+}
+
+neam::r::sequence *neam::r::function_call::get_sequence(const std::string &name)
+{
+  if (!se)
+    return nullptr;
+  auto it = se->sequences.find(name);
+  if (it != se->sequences.end())
+    return &it->second;
+  return nullptr;
+}
+
+neam::r::sequence *neam::r::function_call::get_sequence_callers(const std::string &name)
+{
+  for (neam::r::function_call *it = tl_data->top; it; it = it->prev)
+  {
+    neam::r::sequence *ptr = it->get_sequence(name);
+    if (ptr)
+      return ptr;
+  }
+  return nullptr;
+}
+
+void neam::r::function_call::remove_sequence(const std::string &name)
+{
+  se->sequences.erase(name);
 }
 
 neam::r::introspect neam::r::function_call::get_introspect() const

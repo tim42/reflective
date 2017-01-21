@@ -138,11 +138,21 @@ namespace neam
 
         /// \brief Allow to put fail calls into return statements (or possibly into throw statements)
         template<typename Ret>
-        inline Ret fail(const reason &rsn, Ret r)
+        inline Ret fail(const reason &rsn, Ret&& r)
         {
           fail(rsn);
-          return std::forward<Ret>(r);
+          return (r);
         }
+
+        /// \brief Create or clear a sequence.
+        sequence &create_sequence(const std::string &name);
+        /// \brief Return a sequence if it exists (if not, returns nullptr)
+        sequence *get_sequence(const std::string &name);
+        /// \brief Walk the stack searching if a given sequence exists in the callers.
+        /// If it does find one, it returns it, else it returns 0
+        sequence *get_sequence_callers(const std::string &name);
+        /// \brief Remove a sequence
+        void remove_sequence(const std::string &name);
 
         /// \brief Return a contextualized introspect object
         /// If you want stats, it's this way
@@ -153,7 +163,7 @@ namespace neam
         /// \brief This function tests if the given function will be likely to fail (fail ratio > 0.5 by default) and returns an object with some properties
         /// to do some kind of conditional execution based on fails
         /// \note It use a get_failure_rate() -like way to compute the failure rate (contextualized with the current stack)
-        /// \note It has a "training time", it will return true until a certain amount of call has been reached. This amount can be set the with returned object.
+        /// \note It has a "training time", it will return true until a certain amount of call has been reached. This amount can be set with then returned object.
         /// \note You can change the maximum ratio by setting it in the returned object.
         template<typename FuncType>
         internal::if_wont_fail<FuncType> if_wont_fail(const std::string &name, FuncType func) const

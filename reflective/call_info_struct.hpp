@@ -30,7 +30,6 @@
 #include <deque>
 #include <map>
 
-#include "reason.hpp"
 #include "func_descriptor.hpp"
 #include "type.hpp"
 
@@ -38,13 +37,6 @@ namespace neam
 {
   namespace r
   {
-    /// \brief Information about a measure point
-    struct measure_point_entry
-    {
-      size_t hit_count = 0; /// \brief Number of time the measure_point has been "hit"
-      double value = 0;     /// \brief The average value
-    };
-
     namespace internal
     {
       /// \brief Hold some information about a called function
@@ -64,13 +56,6 @@ namespace neam
         size_t average_self_time_count = 0; ///< \brief Number of time the self_time has been monitored
         double average_global_time = 0; ///< \brief The average time consumed by the whole function call (including all its children)
         size_t average_global_time_count = 0; ///< \brief Number of time the global_time has been monitored
-
-        std::deque<reason> fails = std::deque<reason>(); ///< \brief Holds all the past fails reasons
-
-        std::map<std::string, std::deque<reason>> reports = decltype(reports)(); /// \brief Hold reports
-
-        // GCC does not like std::map<std::string, measure_point_entry> measure_points = std::map<std::string, measure_point_entry>()
-        std::map<std::string, measure_point_entry> measure_points = decltype(measure_points)(); /// \brief Holds informations about measure points
       };
     } // namespace internal
   } // namespace r

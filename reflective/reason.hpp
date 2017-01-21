@@ -94,8 +94,8 @@ namespace neam
     static const reason out_of_memory_reason = reason {"out of memory"};
     static const reason bad_allocation_reason = reason {"bad allocation"};
     static const reason syscall_failed_reason = reason {"syscall failed"};
-    static const reason exception_reason = reason {"exception caught"};
-    static const reason assert_reason = reason {"assertion is false"};
+    static const reason exception_reason = reason {"exception"};
+    static const reason assert_reason = reason {"assertion"};
 
     static const reason file_not_found_reason = reason {"file not found"};
     static const reason error_reason = reason {"error"}; // hum.

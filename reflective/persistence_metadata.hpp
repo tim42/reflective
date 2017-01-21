@@ -98,21 +98,58 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::measure_point_entry, value, names::r__measure_point_entry::value)
     > {};
 
+    // // sequence // //
+    NCRP_DECLARE_NAME(r__sequence, entries);
+    template<typename Backend> class persistence::serializable<Backend, r::sequence> : public persistence::serializable_object
+    <
+      Backend, // < the backend (here: all backends)
+
+      r::sequence, // < the class type to handle
+
+      // simply list here the members you want to serialize / deserialize
+      NCRP_NAMED_TYPED_OFFSET(r::sequence, entries, names::r__sequence::entries)
+    > {};
+
+    // // sequence::entry // //
+    NCRP_DECLARE_NAME(r__sequence__entry, file);
+    NCRP_DECLARE_NAME(r__sequence__entry, line);
+    NCRP_DECLARE_NAME(r__sequence__entry, name);
+    NCRP_DECLARE_NAME(r__sequence__entry, description);
+    template<typename Backend> class persistence::serializable<Backend, r::sequence::entry> : public persistence::serializable_object
+    <
+      Backend, // < the backend (here: all backends)
+
+      r::sequence::entry, // < the class type to handle
+
+      // simply list here the members you want to serialize / deserialize
+      NCRP_NAMED_TYPED_OFFSET(r::sequence::entry, file, names::r__sequence__entry::file),
+      NCRP_NAMED_TYPED_OFFSET(r::sequence::entry, line, names::r__sequence__entry::line),
+      NCRP_NAMED_TYPED_OFFSET(r::sequence::entry, name, names::r__sequence__entry::name),
+      NCRP_NAMED_TYPED_OFFSET(r::sequence::entry, description, names::r__sequence__entry::description)
+    > {};
+
     // // data // //
     NCRP_DECLARE_NAME(r__data, launch_count);
     NCRP_DECLARE_NAME(r__data, func_info);
     NCRP_DECLARE_NAME(r__data, callgraph);
     NCRP_DECLARE_NAME(r__data, name);
     NCRP_DECLARE_NAME(r__data, timestamp);
-    template<typename Backend> class persistence::serializable<Backend, r::internal::data> : public persistence::serializable_object
-    <
+    template<typename Backend> class persistence::serializable<Backend, r::internal::data> :
+#ifdef _MSC_VER
+    public persistence::serializable_object
+#else
+    public persistence::constructible_serializable_object
+#endif
+      <
       Backend, // < the backend (here: all backends)
 
       r::internal::data, // < the class type to handle
 
       // Embed in the template a call to the post-deserialization function
       // This function will be called just after the object has been deserialized
-      //N_CALL_POST_FUNCTION(r::internal::data),
+#ifndef _MSC_VER
+      N_CALL_POST_FUNCTION(r::internal::data),
+#endif
 
       // simply list here the members you want to serialize / deserialize
       NCRP_NAMED_TYPED_OFFSET(r::internal::data, launch_count, names::r__data::launch_count),
@@ -152,9 +189,6 @@ namespace neam
     NCRP_DECLARE_NAME(r__call_info_struct, average_self_time_count);
     NCRP_DECLARE_NAME(r__call_info_struct, average_global_time);
     NCRP_DECLARE_NAME(r__call_info_struct, average_global_time_count);
-    NCRP_DECLARE_NAME(r__call_info_struct, fails);
-    NCRP_DECLARE_NAME(r__call_info_struct, reports);
-    NCRP_DECLARE_NAME(r__call_info_struct, measure_points);
     template<typename Backend> class persistence::serializable<Backend, r::internal::call_info_struct> : public persistence::serializable_object
     <
       Backend, // < the backend (here: all backends)
@@ -168,10 +202,7 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_self_time, names::r__call_info_struct::average_self_time),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_self_time_count, names::r__call_info_struct::average_self_time_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_global_time, names::r__call_info_struct::average_global_time),
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_global_time_count, names::r__call_info_struct::average_global_time_count),
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, measure_points, names::r__call_info_struct::measure_points),
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, fails, names::r__call_info_struct::fails),
-      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, reports, names::r__call_info_struct::reports)
+      NCRP_NAMED_TYPED_OFFSET(r::internal::call_info_struct, average_global_time_count, names::r__call_info_struct::average_global_time_count)
     > {};
 
     // // stack_entry // //
@@ -186,6 +217,10 @@ namespace neam
     NCRP_DECLARE_NAME(r__stack_entry, average_global_time);
     NCRP_DECLARE_NAME(r__stack_entry, average_global_time_count);
     NCRP_DECLARE_NAME(r__stack_entry, global_time_progression);
+    NCRP_DECLARE_NAME(r__stack_entry, sequences);
+    NCRP_DECLARE_NAME(r__stack_entry, fails);
+    NCRP_DECLARE_NAME(r__stack_entry, reports);
+    NCRP_DECLARE_NAME(r__stack_entry, measure_points);
     NCRP_DECLARE_NAME(r__stack_entry, parent);
     NCRP_DECLARE_NAME(r__stack_entry, children);
     template<typename Backend> class persistence::serializable<Backend, r::internal::stack_entry> : public persistence::serializable_object
@@ -206,6 +241,10 @@ namespace neam
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_global_time, names::r__stack_entry::average_global_time),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, average_global_time_count, names::r__stack_entry::average_global_time_count),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, global_time_progression, names::r__stack_entry::global_time_progression),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, sequences, names::r__stack_entry::sequences),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, measure_points, names::r__stack_entry::measure_points),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, fails, names::r__stack_entry::fails),
+      NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, reports, names::r__stack_entry::reports),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, parent, names::r__stack_entry::parent),
       NCRP_NAMED_TYPED_OFFSET(r::internal::stack_entry, children, names::r__stack_entry::children)
     > {};

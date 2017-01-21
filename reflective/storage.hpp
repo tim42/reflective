@@ -29,6 +29,7 @@
 #include <deque>
 #include <mutex>
 #include <set>
+#include <map>
 #include "stack_entry.hpp"
 #include "call_info_struct.hpp"
 #include "type.hpp"
@@ -186,6 +187,9 @@ namespace neam
     /// \brief Write everything to the disk
     void sync_data_to_disk(const std::string &file);
 
+    /// \brief Return the data as a JSON string.
+    std::string get_data_as_json();
+
     /// \brief Load from the disk
     bool load_data_from_disk(const std::string &file);
 
@@ -204,7 +208,7 @@ namespace neam
     /// \brief Load a past/archived reflective data from the stash.
     /// \note You may want to call this before any function_call has been created
     ///       (or after every single ones have been destructed):
-    ///       you may end having corrupted/half merged data...
+    ///       you may end-up having corrupted/half merged data...
     bool load_data_from_stash(const std::string &data_name);
 
     /// \brief Stash the current data and start a new, clear, one

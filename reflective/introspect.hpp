@@ -213,16 +213,20 @@ namespace neam
         /// \note If no measure point is found, it returns nullptr
         const measure_point_entry *get_measure_point_entry(const std::string &name) const
         {
-          const auto &it = call_info->measure_points.find(name);
-          if (it == call_info->measure_points.end())
+          if (!context)
+            return nullptr;
+          const auto &it = context->measure_points.find(name);
+          if (it == context->measure_points.end())
             return nullptr;
           return &it->second;
         }
 
         /// \brief Return the whole measure point map
-        const std::map<std::string, measure_point_entry> &get_measure_point_map() const
+        std::map<std::string, measure_point_entry> get_measure_point_map() const
         {
-          return call_info->measure_points;
+          if (context)
+            return context->measure_points;
+          return std::map<std::string, measure_point_entry>();
         }
 
         /// \brief return the duration progression of the self time
@@ -285,7 +289,29 @@ namespace neam
         /// \brief Return the last \e count errors for the function, most recent last
         /// \param[in] count The number of errors to return
         /// \note this method IS NOT context dependent, but always return errors from the global error list
-        std::vector<reason> get_failure_reasons(size_t count = 10);
+        std::vector<reason> get_failure_reasons(size_t count = 10) const;
+
+        /// \brief Return the last \e count reports for the function, most recent last
+        /// \param[in] mode The report mode to retrieve
+        /// \param[in] count The number of errors to return
+        /// \note this method IS NOT context dependent
+        std::vector<reason> get_reports_for_mode(const std::string &mode, size_t count = 10) const;
+
+        /// \brief Return the whole reports map
+        /// \note this method IS NOT context dependent
+        std::map<std::string, std::deque<reason>> get_reports() const
+        {
+          if (context)
+            return context->reports;
+          return std::map<std::string, std::deque<reason>>();
+        }
+
+        std::map<std::string, sequence> get_sequences() const
+        {
+          if (context)
+            return context->sequences;
+          return std::map<std::string, sequence>();
+        }
 
         /// \brief This function tests if the given function will be likely to fail (fail ratio > 0.5 by default) and returns an object with some properties
         /// to do some kind of conditional execution based on fails

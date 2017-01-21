@@ -16,8 +16,10 @@ void neam::r::measure_point::_save()
     return;
   }
 
-  internal::call_info_struct &cis = cfc->call_info;
-  measure_point_entry &mpe = cis.measure_points[name];
+  internal::stack_entry *se = cfc->se;
+  if (!se)
+    return;
+  measure_point_entry &mpe = se->measure_points[name];
 
   size_t mcount = mpe.hit_count;
   if (conf::sliding_average)
@@ -34,8 +36,10 @@ double neam::r::measure_point::get_average_time() const
   if (!cfc)
     return 0.;
 
-  internal::call_info_struct &cis = cfc->call_info;
-  measure_point_entry &mpe = cis.measure_points[name];
+  internal::stack_entry *se = cfc->se;
+  if (!se)
+    return 0.;
+  measure_point_entry &mpe = se->measure_points[name];
 
   return mpe.value;
 }

@@ -30,6 +30,10 @@
 #include <cstddef>
 #include <vector>
 #include <deque>
+#include <map>
+
+#include "sequence.hpp"
+#include "reason.hpp"
 
 namespace neam
 {
@@ -42,13 +46,20 @@ namespace neam
       double value;     ///< \brief The value at the timestamp time
     };
 
+    /// \brief Information about a measure point
+    struct measure_point_entry
+    {
+      size_t hit_count = 0; /// \brief Number of time the measure_point has been "hit"
+      double value = 0;     /// \brief The average value
+    };
+
     namespace internal
     {
       /// \brief Hold an entry
       struct stack_entry
       {
 #ifdef _MSC_VER
-		  stack_entry(size_t _se, size_t _si, size_t _csi, size_t _p) : self_index(_se), stack_index(_si), call_structure_index(_csi), parent(_p) {}
+        stack_entry(size_t _se, size_t _si, size_t _csi, size_t _p) : self_index(_se), stack_index(_si), call_structure_index(_csi), parent(_p) {}
 #endif
         const size_t self_index; ///< \brief Hold the index of the stack_entry structure
         const size_t stack_index; ///< \brief Hold the current stack index (index in the callgraph deque)
@@ -68,6 +79,14 @@ namespace neam
         size_t average_global_time_count = 0; ///< \brief Number of time the global_time has been monitored
         std::deque<duration_progression> global_time_progression = std::deque<duration_progression>();
 
+        std::map<std::string, sequence> sequences = std::map<std::string, sequence>(); ///< \brief Hold sequences
+
+        std::deque<reason> fails = std::deque<reason>(); ///< \brief Holds all the past fails reasons
+
+        std::map<std::string, std::deque<reason>> reports = decltype(reports)(); /// \brief Hold reports
+
+        // GCC does not like std::map<std::string, measure_point_entry> measure_points = std::map<std::string, measure_point_entry>()
+        std::map<std::string, measure_point_entry> measure_points = decltype(measure_points)(); /// \brief Holds informations about measure points
 
         // ----- //
 
