@@ -6,6 +6,10 @@ add_subdirectory(common)
 include_directories(common/)
 
 # build the tools
+add_subdirectory(reflective2json)
+add_subdirectory(quick-report)
+
+# those tools depends on boost. only build them if boost if found
 if (Boost_PROGRAM_OPTIONS_FOUND)
   add_subdirectory(callgraph2dot)
 else()
