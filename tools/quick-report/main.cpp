@@ -95,6 +95,8 @@ int main(int argc, char **argv)
 
   std::string out_file = std::string(argv[1]) + ".report";
   neam::cr::out.add_stream(*(new std::ofstream(out_file, std::ios_base::trunc)), true);
+  neam::cr::out.no_header = true;
+
   const size_t stash_index = neam::r::get_active_stash_index();
 
   neam::cr::out.log() << "---------------------------------------------------------------------------------------------" << std::endl;
