@@ -6,7 +6,6 @@ set(PROJ_SOURCES
   ./stack_entry.cpp
   ./function_call.cpp
   ./introspect.cpp
-  ./if_wont_fail.cpp
   ./signal.cpp
   ./measure_point.cpp
 )

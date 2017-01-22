@@ -37,7 +37,6 @@
 #include "reason.hpp"
 #include "call_info_struct.hpp"
 #include "storage.hpp"
-#include "if_wont_fail.hpp"
 #include "type.hpp"
 #include "config.hpp"
 namespace neam

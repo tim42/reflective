@@ -36,7 +36,6 @@
 #include "call_info_struct.hpp"
 #include "type.hpp"
 #include "id_gen.hpp"
-#include "if_wont_fail.hpp"
 
 namespace neam
 {
@@ -311,30 +310,6 @@ namespace neam
           if (context)
             return context->sequences;
           return std::map<std::string, sequence>();
-        }
-
-        /// \brief This function tests if the given function will be likely to fail (fail ratio > 0.5 by default) and returns an object with some properties
-        /// to do some kind of conditional execution based on fails
-        /// \note It use a get_failure_ratio() -like way to compute the failure rate (contextualized with the current stack, if any)
-        /// \note It has a training time, it will return true until a certain amount of call has been reached. This amount can be set the with returned object.
-        /// \note You can change the maximum ratio by setting it in the returned object.
-        template<typename FuncType>
-        internal::if_wont_fail<FuncType> if_wont_fail(const char *const name, FuncType func) const
-        {
-          size_t o_call_info_index;
-          internal::call_info_struct &o_call_info = internal::get_call_info_struct<void>(func_descriptor {name}, &o_call_info_index);
-          internal::stack_entry *o_context = nullptr;
-          if (context)
-            o_context = context->get_children_stack_entry(o_call_info_index);
-
-          introspect child(o_call_info, o_call_info_index, o_context);
-          if (!child.is_faithfull())
-            child.remove_context();
-
-          float ratio = child.get_failure_ratio();
-          size_t count = child.get_call_count();
-
-          return internal::if_wont_fail<FuncType>(count, ratio, func);
         }
 
         /// \brief equality operator
