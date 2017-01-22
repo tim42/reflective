@@ -38,7 +38,7 @@ neam::r::function_call::~function_call()
   if (tl_data->top != this)
     return;
 
-  size_t ts = std::time(nullptr);
+  int64_t ts = std::time(nullptr);
 
   // Save the time monitoring (global & self)
   // TODO: thread safety
@@ -140,7 +140,7 @@ void neam::r::function_call::fail(const neam::r::reason &rsn)
 
   // Avoid huge reports if we always hit the same error
   // We don't test the whole array 'cause we want to keep the ordering
-  size_t ts = std::time(nullptr);
+  int64_t ts = std::time(nullptr);
   {
     std::lock_guard<internal::mutex_type> _u0(global->lock);
 
@@ -167,7 +167,7 @@ void neam::r::function_call::report(const std::string &mode, const neam::r::reas
 
   // Avoid huge reports if we always hit the same thing
   // We don't test the whole array 'cause we want to keep the ordering
-  size_t ts = std::time(nullptr);
+  int64_t ts = std::time(nullptr);
 
   if (!se) return;
 

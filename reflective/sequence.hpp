@@ -55,12 +55,12 @@ namespace neam
         struct entry
         {
 #ifdef _MSC_VER
-          entry(const std::string &_file = std::string(), size_t _line = 0, const std::string &_name = std::string(), const std::string &_desc = std::string())
+          entry(const std::string &_file = std::string(), uint64_t _line = 0, const std::string &_name = std::string(), const std::string &_desc = std::string())
             : file(_file), line(_line), name(_name), description(_desc)
           {}
 #endif
           std::string file = std::string();
-          size_t line = 0;
+          uint64_t line = 0;
           std::string name = std::string();
           std::string description = std::string();
         };

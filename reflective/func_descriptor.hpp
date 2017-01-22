@@ -42,7 +42,7 @@ namespace neam
     struct func_descriptor
     {
 #ifdef _MSC_VER
-      func_descriptor(const std::string &_name, const std::string &_pretty_name = std::string(), const std::string &_file = std::string(), size_t _line = 0, const std::string &_key_name = std::string(), uint32_t _key_hash = 0)
+      func_descriptor(const std::string &_name, const std::string &_pretty_name = std::string(), const std::string &_file = std::string(), uint64_t _line = 0, const std::string &_key_name = std::string(), uint32_t _key_hash = 0)
         : name(_name), pretty_name(_pretty_name), file(_file), line(_line), key_name(_key_name), key_hash(_key_hash)
       {}
 #endif
@@ -50,7 +50,7 @@ namespace neam
       std::string pretty_name = std::string(); ///< \brief print name
 
       std::string file = std::string(); ///< \brief The zip code
-      size_t line = 0; ///< \brief The line of the fiel
+      uint64_t line = 0; ///< \brief The line of the fiel
 
       std::string key_name = std::string(); ///< \brief Used as unique ID to compare
       uint32_t key_hash = 0; ///< \brief Used to fast, compare the unique ID

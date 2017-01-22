@@ -41,7 +41,7 @@ namespace neam
       template<typename T> struct type { using t = T; };
 
       /// \brief only present for having a cache
-      template<uint32_t Hash, size_t Line> struct file_type {};
+      template<uint32_t Hash, uint64_t Line> struct file_type {};
     } // namespace internal
   } // namespace r
 } // namespace neam

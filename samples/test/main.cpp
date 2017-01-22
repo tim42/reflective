@@ -12,6 +12,15 @@
 #include <tools/debug/unix_errors.hpp>  // for the integration with neam::debug::*
 #include "introspect_helper.hpp"
 
+neam::r::sequence *seq = nullptr;
+
+#define PUSH_SEQ(x, y)    if (seq) seq->add_entry({N_SEQUENCE_ENTRY_INFO, x, y})
+#define PUSH_CALL         PUSH_SEQ("function call", self_call.get_introspect().get_name())
+
+// A correct implementation of a logger w/ reflective is to both have a report and a sequence
+static const neam::r::reason log_reason = neam::r::reason {"log"};
+#define LOG(x)            do {self_call.report("log", log_reason(N_REASON_INFO, x)); PUSH_SEQ("log", x); } while (0)
+
 class s
 {
   public:
@@ -21,9 +30,10 @@ class s
       neam::r::measure_point mp1("function_call-constructor-time");
 
       neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(s::d));
-
       // stop the measure_point
       mp1.stop();
+
+      PUSH_CALL;
 
       // another silly measure_point
       neam::r::measure_point mp2("half-time", neam::r::defer_start);
@@ -39,23 +49,29 @@ class s
 
       if ((rand() ^ r) % 50 < 3)
         self_call.fail(neam::r::lazy_programmer_reason(N_REASON_INFO, "[can't touch this]"));
+      else
+        self_call.report("not an error", neam::r::lazy_programmer_reason(N_REASON_INFO, "[YAY]"));
     }
 
     void f()
     {
       neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(s::f));
+      PUSH_CALL;
 
       // randomly make the prog segfault-
       if (rand() % 100000 < 10000)
       {
+        LOG("RANDOM CRASH SPOTTED");
         neam::cr::out.warning() << LOGGER_INFO << "random crash spotted !" << std::endl;
-        if (rand() % 2 == 5)
+        if (rand() % 2 == 1)
         {
+          LOG("WE GONNA HAVE A SEGFAULT !");
           volatile int *ptr = nullptr;
           *ptr = 0;
         }
         else
         {
+          LOG("WE GONNA HAVE AN EXCEPTION !");
           std::vector<int> vct;
           vct.at(50) = 1;
         }
@@ -68,23 +84,21 @@ static bool xfirst = false;
 void fnc()
 {
   neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(fnc));
+  PUSH_CALL;
 
   for (volatile size_t k = 0; k < 100000; ++k);
 
   s lol;
 
-  self_call.if_wont_fail("s::d", &s::d)
-      .call(&lol)
-      .otherwise([&]()
-      {
-        lol.f();
-      });
+
+  lol.d();
 
   lol.f();
 
   if (!xfirst)
   {
     xfirst = true;
+    LOG("FAILED TEST ?!");
     try
     {
       neam::debug::on_error<neam::debug::errors::unix_errors>::n_assert(false == true, "wow, I don't understand what failed here...");
@@ -114,6 +128,10 @@ int main(int /*argc*/, char **/*argv*/)
   // We finally start main
   neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(main));
 
+  seq = &self_call.create_sequence("call sequence");
+
+  PUSH_CALL;
+
   // We do some introspection & pretty printing
   sample::introspect_function("s::d");
   sample::introspect_function("s::f");
@@ -122,6 +140,7 @@ int main(int /*argc*/, char **/*argv*/)
 
   // print all stashes:
   {
+    LOG("PRINT STASHES");
     std::cout << "\nstashes:\n";
     size_t cidx = 0;
     const size_t active_idx = neam::r::get_active_stash_index();
@@ -134,6 +153,8 @@ int main(int /*argc*/, char **/*argv*/)
     }
     std::cout << std::endl;
   }
+
+  LOG("RUNNING A BIT");
 
   s lol;
 
@@ -148,6 +169,9 @@ int main(int /*argc*/, char **/*argv*/)
       fnc();
     }
   }
-  catch (...) {}
+  catch (...)
+  {
+    LOG("GOT AN EXCEPTION, IGNORED IT");
+  }
   return 0;
 }

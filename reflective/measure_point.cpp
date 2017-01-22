@@ -21,7 +21,7 @@ void neam::r::measure_point::_save()
     return;
   measure_point_entry &mpe = se->measure_points[name];
 
-  size_t mcount = mpe.hit_count;
+  uint64_t mcount = mpe.hit_count;
   if (conf::sliding_average)
     mcount = std::min(mcount, conf::past_average_weight);
 

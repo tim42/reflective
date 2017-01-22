@@ -26,9 +26,6 @@
 #ifndef __N_147554771727415468_1812229998__ID_GEN_HPP__
 # define __N_147554771727415468_1812229998__ID_GEN_HPP__
 
-#include <stdint.h>
-#include "tools/ct_string.hpp"
-
 /// \file id_gen.hpp
 /// \brief Generate IDs from things
 /// A simple note about why I need a ID generator and not typeid. typeid hashes are not unique AND not consistent
@@ -46,6 +43,9 @@
 /// And why not using std::{unordered_,}map from the start ? I needed to have an indexable DB with the guarantee that the address
 /// will NEVER be changed by insertions.
 
+#include <stdint.h>
+#include "tools/ct_string.hpp"
+
 namespace neam
 {
   namespace r
@@ -60,13 +60,13 @@ namespace neam
         const long addr = reinterpret_cast<long>(&__addr__);
         Ret(*ptr2)(Class *, Args...);
         ptr2 = reinterpret_cast<Ret( *)(Class *, Args...)>(ptr);
-        return uint32_t(addr - reinterpret_cast<long>(reinterpret_cast<void *>(ptr2)));
+        return uint32_t(addr - reinterpret_cast<long>(reinterpret_cast<void *>(ptr2))) & ~1u;
       }
       template<typename Ret, typename... Args>
       static inline uint32_t hash_from_ptr(Ret(*ptr)(Args...))
       {
         const long addr = reinterpret_cast<long>(&__addr__);
-        return (uint32_t(addr - reinterpret_cast<long>((void *)ptr))) & 0xFFFE;
+        return (uint32_t(addr - reinterpret_cast<long>((void *)ptr))) & ~1u;
       }
 
       /// \brief This hash is guaranteed to be and consistent across program launch
@@ -94,10 +94,10 @@ namespace neam
 
         return hash | 1;
       }
-#define N_R_XBUILD_COMPAT
+
       /// \brief Generate an id for a string / ptr
       template<typename Ret, typename... Args>
-#ifdef N_R_XBUILD_COMPAT
+#ifndef N_R_XBUILD_COMPAT
 #ifndef _MSC_VER
       constexpr
 #endif
@@ -105,7 +105,7 @@ namespace neam
 #endif
       uint32_t generate_id(const char *const string, Ret (*ptr)(Args...))
       {
-#ifdef N_R_XBUILD_COMPAT
+#ifndef N_R_XBUILD_COMPAT
         (void)ptr;
         return hash_from_str(string);
 #else

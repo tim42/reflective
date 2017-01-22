@@ -37,10 +37,10 @@ namespace neam
     {
 #ifdef _MSC_VER
       reason() = default;
-      explicit reason(const std::string &_type, const std::string &_message = std::string(), const std::string &_file = std::string(), size_t _line = 0)
+      explicit reason(const std::string &_type, const std::string &_message = std::string(), const std::string &_file = std::string(), uint64_t _line = 0)
        : type(_type), message(_message), file(_file), line(_line)
       {}
-      explicit reason(const std::string &_type, const std::string &_message, const std::string &_file, size_t _line, size_t _hit, size_t _it, size_t _lt)
+      explicit reason(const std::string &_type, const std::string &_message, const std::string &_file, uint64_t _line, uint64_t _hit, uint64_t _it, uint64_t _lt)
        : type(_type), message(_message), file(_file), line(_line), hit(_hit), initial_timestamp(_it), last_timestamp(_lt)
       {}
    #endif
@@ -48,23 +48,23 @@ namespace neam
       std::string message = std::string();
 
       std::string file = std::string();
-      size_t line = 0;
+      uint64_t line = 0;
 
       // --- //
 
-      size_t hit = 1; ///< \brief Do not touch this.
-      size_t initial_timestamp = 0; ///< \brief Do not touch this.
-      size_t last_timestamp = 0; ///< \brief Do not touch this.
+      uint64_t hit = 1; ///< \brief Do not touch this.
+      int64_t initial_timestamp = 0; ///< \brief Do not touch this.
+      int64_t last_timestamp = 0; ///< \brief Do not touch this.
 
       /// \brief Used to append the filename & the line to a predefined reason (like those below)
-      /// \see REASON_INFO
+      /// \see N_REASON_INFO
       /// \code
-      /// self_call.fail(neam::r::out_of_memory_reason(REASON_INFO));
+      /// self_call.fail(neam::r::out_of_memory_reason(N_REASON_INFO));
       ///  // or
       /// self_call.fail(neam::r::out_of_memory_reason(N_REASON_INFO, "failed to allocate memory for my_huge_array"));
       /// \endcode
-      reason operator() (const std::string &_file, size_t _line) const { return reason { type, message, _file, _line }; }
-      reason operator() (const std::string &_file, size_t _line, const std::string &_message) const { return reason { type, _message, _file, _line }; }
+      reason operator() (const std::string &_file, uint64_t _line) const { return reason { type, message, _file, _line }; }
+      reason operator() (const std::string &_file, uint64_t _line, const std::string &_message) const { return reason { type, _message, _file, _line }; }
 
       /// \brief Equality operator
       bool operator == (const reason &o) const

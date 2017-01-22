@@ -60,19 +60,6 @@ int main(int /*argc*/, char **/*argv*/)
   neam::cr::out.log() << LOGGER_INFO << introspect.get_pretty_name() << ": " << int(introspect.get_failure_ratio() * 100) << "% chance of failure" << std::endl;
   neam::cr::out.log() << LOGGER_INFO << introspect.get_pretty_name() << ": " << introspect.get_average_duration() << "s average duration" << std::endl;
 
-  // You can also have conditional calls based on the success rate of the function
-  // You have to specify the name of the function and its pointer.
-  self_call.if_wont_fail("sample::my_class::may_throw", &sample::my_class::may_throw)
-  .call(&instance0, 0)   // then, call(...) will effectively call the function, if the conditions are OK
-  .then([]() // then() is called if the function has been called
-  {
-    neam::cr::out.log() << LOGGER_INFO << "Called sample::my_class::may_throw() with success !!" << std::endl;
-  })
-  .otherwise([]() // otherwise() is called if the function hasn't been called
-  {
-    neam::cr::out.log() << LOGGER_INFO << "Didn't called sample::my_class::may_throw()" << std::endl;
-  });
-
   // If either this scope is exited or something bad happens (signal is caught,
   // exception throw but not caugh, a protection/segmentation fault, ...)
   // reflective will save the data to the file (unless this is disabled in the

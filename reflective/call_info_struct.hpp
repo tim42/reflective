@@ -49,13 +49,13 @@ namespace neam
 
         // ----- //
 
-        size_t call_count = 0; ///< \brief The number of call of this function
-        size_t fail_count = 0; ///< \brief The number of time that function failed
+        uint64_t call_count = 0; ///< \brief The number of call of this function
+        uint64_t fail_count = 0; ///< \brief The number of time that function failed
 
         double average_self_time = 0; ///< \brief The average time consumed by the function and only this function
-        size_t average_self_time_count = 0; ///< \brief Number of time the self_time has been monitored
+        uint64_t average_self_time_count = 0; ///< \brief Number of time the self_time has been monitored
         double average_global_time = 0; ///< \brief The average time consumed by the whole function call (including all its children)
-        size_t average_global_time_count = 0; ///< \brief Number of time the global_time has been monitored
+        uint64_t average_global_time_count = 0; ///< \brief Number of time the global_time has been monitored
       };
     } // namespace internal
   } // namespace r

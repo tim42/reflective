@@ -223,7 +223,7 @@ bool neam::r::load_data_from_disk(const std::string &file)
   }
 
   inf.seekg(0, std::ios_base::end);
-  long size = inf.tellg();
+  int64_t size = inf.tellg();
   inf.seekg(0, std::ios_base::beg);
 
   if (!size || size < 0)
@@ -261,14 +261,14 @@ bool neam::r::load_data_from_disk(const std::string &file)
       std::lock_guard<internal::mutex_type> _u0(data_it.lock); // lock 'cause we do a lot of nasty things.
 
       // walk the whole callgraph to set correct ids
-      size_t stack_index = 0;
+      uint64_t stack_index = 0;
       for (auto & graph_it : data_it.callgraph)
       {
-        size_t index = 0;
+        uint64_t index = 0;
         for (internal::stack_entry & it : graph_it)
         {
-          const_cast<size_t &>(it.self_index) = index;
-          const_cast<size_t &>(it.stack_index) = stack_index;
+          const_cast<uint64_t &>(it.self_index) = index;
+          const_cast<uint64_t &>(it.stack_index) = stack_index;
           ++index;
         }
         ++stack_index;

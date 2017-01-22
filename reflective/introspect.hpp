@@ -351,6 +351,11 @@ namespace neam
                  || o.call_info != this->call_info;
         }
 
+        bool operator < (const introspect &o) const
+        {
+          return call_info_index < o.call_info_index || (size_t)call_info < (size_t)o.call_info || (size_t)o.context < (size_t)o.context;
+        }
+
       private:
         size_t call_info_index;
         internal::call_info_struct *call_info;

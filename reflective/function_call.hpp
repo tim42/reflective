@@ -48,32 +48,6 @@ namespace neam
 
     /// \brief The public interface for monitoring function call
     /// This class allow to monitor functions.
-    /// \code
-    /// void my_other_function(int i);
-    ///
-    /// void my_function(int i, double d, void **p)
-    /// {
-    ///   neam::r::function_call self_call(N_PRETTY_FUNCTION_INFO(my_function)); // this is the only mandatory line in functions you want to monitor
-    ///
-    ///   // ...
-    ///
-    ///   *p = operator new((125 + i) * 1024  1024, std::nothrow);
-    ///   if (!*p)
-    ///     self_call.fail(neam::r::bad_allocation_reason(N_REASON_INFO, "can't allocate enough memory for p")); // report an error / a small problem
-    ///
-    ///   // ...
-    ///
-    ///   self_call.if_wont_fail(N_FUNCTION_INFO(my_other_function)) // conditional execution
-    ///         .call(i * d)
-    ///         .otherwise([&]()
-    ///         {
-    ///           my_heavy_function_that sanitize_things();
-    ///           my_other_function(i * d);
-    ///         });
-    ///
-    ///   // ...
-    /// }
-    /// \endcode
     /// \see introspect
     class function_call
     {
@@ -157,37 +131,6 @@ namespace neam
         /// \brief Return a contextualized introspect object
         /// If you want stats, it's this way
         introspect get_introspect() const;
-
-        // // conditional // //
-
-        /// \brief This function tests if the given function will be likely to fail (fail ratio > 0.5 by default) and returns an object with some properties
-        /// to do some kind of conditional execution based on fails
-        /// \note It use a get_failure_rate() -like way to compute the failure rate (contextualized with the current stack)
-        /// \note It has a "training time", it will return true until a certain amount of call has been reached. This amount can be set with then returned object.
-        /// \note You can change the maximum ratio by setting it in the returned object.
-        template<typename FuncType>
-        internal::if_wont_fail<FuncType> if_wont_fail(const std::string &name, FuncType func) const
-        {
-          size_t o_call_info_index = 0;
-          internal::call_info_struct &o_call_info = internal::get_call_info_struct<void>(func_descriptor {name}, &o_call_info_index, true);
-          internal::stack_entry *o_se = nullptr;
-
-          float ratio = 0.f;
-          size_t count = 0;
-
-          if (se && (o_se = se->get_children_stack_entry(o_call_info_index)) && o_se->hit_count > 1) // stack-based failure rate
-          {
-            ratio = float(o_se->fail_count) / float(o_se->hit_count);
-            count = o_se->hit_count;
-          }
-          else // globally based failure rate (either we don't monitor stack traces, or we don't have called the function yet)
-          {
-            ratio = float(o_call_info.fail_count) / float(o_call_info.call_count);
-            count = o_call_info.call_count;
-          }
-
-          return internal::if_wont_fail<FuncType>(count, ratio, func);
-        }
 
       private:
         size_t call_info_index;
