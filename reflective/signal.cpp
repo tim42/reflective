@@ -12,6 +12,7 @@ void neam::r::on_signal(int sig)
   function_call *fc = function_call::get_active_function_call();
   if (fc)
   {
+    neam::cr::out.log() << LOGGER_INFO << "REFLECTIVE: a signal has been caugh. Will report it." << std::endl;
     switch (sig)
     {
       case SIGSEGV:
@@ -36,14 +37,17 @@ void neam::r::on_signal(int sig)
   }
   else
   {
-    neam::cr::out.critical() << LOGGER_INFO << "could not report that I just died from a nasty signal, so here is a backtrace" << std::endl;
+    neam::cr::out.critical() << LOGGER_INFO << "REFLECTIVE: could not report that I just died from a nasty signal. Will try to exit correctly." << std::endl;
   }
 
+  conf::disable_auto_save = true; // further saves may corrupt the file once we've done this
 
   if (conf::cleanup_on_crash)
   {
     // save (we may cause a crash later)
-    sync_data_to_disk(conf::out_file);
+    // The cleanup rely on the fact that the stack is intact and wasn't overwritten
+    // This assumption may be wrong, so we should have a backup save (without timings) in case we crash doing the stack unfolding.
+    sync_data_to_disk(std::string(conf::out_file) + ".bak");
 
     internal::cleanup_reflective_data();
   }
