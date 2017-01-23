@@ -172,7 +172,7 @@ void neam::r::sync_data_to_disk(const std::string &file)
     return;
   }
 
-  serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::neam>(root_ptr);
+  serialized_data = neam::cr::persistence::serialize<neam::cr::persistence_backend::json>(root_ptr);
 
   if (!serialized_data.size)
   {
@@ -242,7 +242,7 @@ bool neam::r::load_data_from_disk(const std::string &file)
   serialized_data.data = (int8_t *)memory;
   serialized_data.size = size;
 
-  root_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::neam, root_data>(serialized_data);
+  root_ptr = neam::cr::persistence::deserialize<neam::cr::persistence_backend::json, root_data>(serialized_data);
 
   delete [] memory;
 

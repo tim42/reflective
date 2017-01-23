@@ -23,7 +23,7 @@ void neam::r::measure_point::_save()
 
   uint64_t mcount = mpe.hit_count;
   if (conf::sliding_average)
-    mcount = std::min(mcount, conf::past_average_weight);
+    mcount = std::min(mcount, uint64_t(conf::past_average_weight));
 
   // update the stored value
   mpe.value = (mpe.value * mcount + value) / (mcount + 1);

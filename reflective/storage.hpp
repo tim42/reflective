@@ -62,7 +62,7 @@ namespace neam
           ~data() = default;
 
         public: // attributes
-          size_t launch_count = 1;
+          uint64_t launch_count = 1;
 
           mutex_type lock; // only used if global == this (else, the structure is per-thread, no need to lock)
           std::deque<call_info_struct> func_info; // protected by the mutex lock
@@ -71,7 +71,7 @@ namespace neam
 
           // when stashed only //
           std::string name;
-          long timestamp;
+          int64_t timestamp;
 
 #ifndef _MSC_VER
         private:

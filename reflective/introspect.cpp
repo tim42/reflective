@@ -61,7 +61,7 @@ std::vector<neam::r::introspect> neam::r::introspect::get_callee_list() const
       {
         if (it.call_structure_index == call_info_index)
         {
-          for (size_t callee_idx : it.children)
+          for (uint64_t callee_idx : it.children)
           {
             internal::stack_entry &callee = graph_it[callee_idx];
 
@@ -73,7 +73,7 @@ std::vector<neam::r::introspect> neam::r::introspect::get_callee_list() const
   }
   else
   {
-    for (size_t &callee_idx : context->children)
+    for (uint64_t &callee_idx : context->children)
     {
       internal::stack_entry &callee = global->callgraph[context->stack_index][callee_idx];
 

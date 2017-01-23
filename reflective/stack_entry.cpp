@@ -6,7 +6,7 @@
 thread_local size_t thread_index = 0;
 
 
-inline long int neam::r::internal::stack_entry::get_children_stack_entry_index(size_t call_info_struct_index) const
+inline long int neam::r::internal::stack_entry::get_children_stack_entry_index(uint64_t call_info_struct_index) const
 {
   data *global = get_global_data();
 
@@ -20,7 +20,7 @@ inline long int neam::r::internal::stack_entry::get_children_stack_entry_index(s
   return -1;
 }
 
-neam::r::internal::stack_entry &neam::r::internal::stack_entry::push_children_call_info(size_t call_info_struct_index)
+neam::r::internal::stack_entry &neam::r::internal::stack_entry::push_children_call_info(uint64_t call_info_struct_index)
 {
   data *global = get_global_data();
 
@@ -32,7 +32,7 @@ neam::r::internal::stack_entry &neam::r::internal::stack_entry::push_children_ca
   {
     index = global->callgraph[thread_index].size();
 
-    global->callgraph[thread_index].emplace_back(stack_entry{(size_t)index, thread_index, call_info_struct_index, self_index});
+    global->callgraph[thread_index].emplace_back(stack_entry{(uint64_t)index, thread_index, call_info_struct_index, self_index});
     children.push_back(index);
     return global->callgraph[thread_index].back();
   }
@@ -43,7 +43,7 @@ neam::r::internal::stack_entry &neam::r::internal::stack_entry::push_children_ca
   }
 }
 
-neam::r::internal::stack_entry *neam::r::internal::stack_entry::get_children_stack_entry(size_t call_info_struct_index) const
+neam::r::internal::stack_entry *neam::r::internal::stack_entry::get_children_stack_entry(uint64_t call_info_struct_index) const
 {
   data *global = get_global_data();
 
@@ -56,7 +56,7 @@ neam::r::internal::stack_entry *neam::r::internal::stack_entry::get_children_sta
   return nullptr;
 }
 
-neam::r::internal::stack_entry &neam::r::internal::stack_entry::initial_get_stack_entry(size_t call_info_struct_index)
+neam::r::internal::stack_entry &neam::r::internal::stack_entry::initial_get_stack_entry(uint64_t call_info_struct_index)
 {
   size_t index = 0;
   data *global = get_global_data();
